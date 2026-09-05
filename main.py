@@ -22,9 +22,19 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 WELCOME_TEXT = (
-    "Welcome to ShahLance — Your All-in-One Digital Marketplace!\n\n"
-    "🔒 Secure & Verified | ⚡ Instant Access | 🤝 24/7 Customer Support"
+    "➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
+    "🌟 Welcome To ShahLance.Com\n"
+    "🛍️ All-in-One Digital Market\n"
+    "➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
+    "🔒 Secure & Verified Deals\n"
+    "⚡ Instant & Auto Delivery\n"
+    "🛡️ 100% Escrow Protection\n"
+    "✅ Verified & Safe Sellers\n"
+    "💯 Satisfaction Guaranteed\n"
+    "🤝 24/7 Live Online Support\n"
+    "➖➖➖➖➖➖➖➖➖➖➖➖➖"
 )
+
 
 def con():
     c = sqlite3.connect(DB)
