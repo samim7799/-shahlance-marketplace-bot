@@ -21,6 +21,11 @@ if not TOKEN:
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+WELCOME_TEXT = (
+    "Welcome to ShahLance — Your All-in-One Digital Marketplace!\n\n"
+    "🔒 Secure & Verified | ⚡ Instant Access | 🤝 24/7 Customer Support"
+)
+
 def con():
     c = sqlite3.connect(DB)
     c.row_factory = sqlite3.Row
@@ -70,8 +75,8 @@ def K(rows):
 def main_menu():
     return K([
       [("👤 My Profile", "profile"), ("🛍 Marketplace", "market")],
-      [("📦 My Orders", "orders"), ("💰 Wallet", "wallet")],
-      [("🏪 Become A Seller", "seller"), ("💬 Support", "support")],
+      [("📦 My Orders", "orders"), ("💰 My Wallet", "wallet")],
+      [("🤝 Become A Seller", "seller"), ("👨‍💻 Admin Support", "support")],
       [("🎁 Referral Program", "referral"), ("📜 Terms And Rules", "terms")]
     ])
 
@@ -105,7 +110,7 @@ async def is_member(user_id: int) -> bool:
 async def start(m: Message):
     parts = m.text.split(maxsplit=1)
     register(m.from_user, parts[1][4:] if len(parts) > 1 and parts[1].startswith("ref_") else None)
-    await m.answer("🌐 Please select your language / ভাষা নির্বাচন করুন:", reply_markup=language_kb())
+    await m.answer("🌐 Please select your language:", reply_markup=language_kb())
 
 @dp.callback_query(F.data.startswith("lang:"))
 async def choose_language(q: CallbackQuery):
@@ -124,7 +129,7 @@ async def start_using(q: CallbackQuery):
             reply_markup=join_kb()
         )
         return await q.answer("Please join the channel first.", show_alert=True)
-    await q.message.edit_text("🏠 Welcome to the marketplace.\n\nChoose an option:", reply_markup=main_menu())
+    await q.message.edit_text(WELCOME_TEXT, reply_markup=main_menu())
     await q.answer()
 
 @dp.callback_query(F.data == "check_join")
@@ -132,7 +137,7 @@ async def check_join(q: CallbackQuery):
     if not await is_member(q.from_user.id):
         await q.answer("❌ You have not joined the channel yet.", show_alert=True)
         return
-    await q.message.edit_text("✅ Membership verified.\n\n🏠 Welcome to the marketplace.", reply_markup=main_menu())
+    await q.message.edit_text(WELCOME_TEXT, reply_markup=main_menu())
     await q.answer()
 
 @dp.callback_query(F.data == "profile")
@@ -146,7 +151,7 @@ async def profile(q: CallbackQuery):
     c.close()
     await q.message.edit_text(
         f"👤 My Profile\n\n🆔 ID: {u['id']}\n👤 @{u['username'] or 'N/A'}\n💰 Balance: {u['balance']} {CURRENCY}\n📦 Orders: {n}\n🏪 Seller status: {u['seller_status']}",
-        reply_markup=K([[("💰 Wallet", "wallet"), ("📦 Orders", "orders")], [("⬅️ Main Menu", "home")]])
+        reply_markup=K([[("💰 My Wallet", "wallet"), ("📦 Orders", "orders")], [("⬅️ Main Menu", "home")]])
     )
     await q.answer()
 
@@ -160,7 +165,7 @@ async def market(q: CallbackQuery):
     c.close()
     buttons = [[(r["name"], f"cat:{r['id']}")] for r in rows] or [[("No categories yet", "noop")]]
     buttons.append([("⬅️ Main Menu", "home")])
-    await q.message.edit_text("🛍 Marketplace\n\nSelect a category:", reply_markup=K(buttons))
+    await q.message.edit_text(WELCOME_TEXT, reply_markup=K(buttons))
     await q.answer()
 
 @dp.callback_query(F.data.startswith("cat:"))
@@ -246,7 +251,7 @@ async def wallet(q: CallbackQuery):
     c = con()
     u = c.execute("SELECT balance FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     c.close()
-    await q.message.edit_text(f"💰 Wallet\n\nBalance: {u['balance']} {CURRENCY}\n\n➕ Deposit: /deposit AMOUNT\n💸 Withdraw: /withdraw AMOUNT PAYMENT_DETAILS", reply_markup=K([[("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text(f"💰 My Wallet\n\nBalance: {u['balance']} {CURRENCY}\n\n➕ Deposit: /deposit AMOUNT\n💸 Withdraw: /withdraw AMOUNT PAYMENT_DETAILS", reply_markup=K([[("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.message(Command("deposit"))
@@ -301,8 +306,8 @@ async def seller(q: CallbackQuery):
     u = c.execute("SELECT seller_status FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     c.close()
     if u["seller_status"] == "approved":
-        return await q.message.edit_text("🏪 Seller Center", reply_markup=K([[("➕ Add Product", "seller_add"), ("📦 My Products", "seller_products")], [("📊 Sales", "seller_sales")], [("⬅️ Main Menu", "home")]]))
-    await q.message.edit_text("🏪 Become A Seller\n\nApply with /seller_apply followed by what you sell and your experience.\n\nOnly lawful, authorized and platform-compliant products/services are allowed.", reply_markup=K([[("📜 Seller Rules", "terms")], [("⬅️ Main Menu", "home")]]))
+        return await q.message.edit_text("🤝 Seller Center", reply_markup=K([[("➕ Add Product", "seller_add"), ("📦 My Products", "seller_products")], [("📊 Sales", "seller_sales")], [("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text("🤝 Become A Seller\n\nApply with /seller_apply followed by what you sell and your experience.\n\nOnly lawful, authorized and platform-compliant products/services are allowed.", reply_markup=K([[("📜 Seller Rules", "terms")], [("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.message(Command("seller_apply"))
@@ -318,7 +323,7 @@ async def seller_apply(m: Message):
     c.close()
     await m.answer("⏳ Seller application submitted for review.")
     if ADMIN_ID:
-        await bot.send_message(chat_id=ADMIN_ID, text=f"🏪 Seller application\nUser: {m.from_user.id}\n{d}\n/approve_seller {m.from_user.id}")
+        await bot.send_message(chat_id=ADMIN_ID, text=f"🤝 Seller application\nUser: {m.from_user.id}\n{d}\n/approve_seller {m.from_user.id}")
 
 @dp.callback_query(F.data == "referral")
 async def referral(q: CallbackQuery):
@@ -340,10 +345,10 @@ async def support(q: CallbackQuery):
         await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
         return await q.answer("Join the channel first.", show_alert=True)
     markup = K([[("⬅️ Main Menu", "home")]])
-    text = "💬 Support\n\nSupport is not configured yet."
+    text = "👨‍💻 Admin Support\n\nSupport is not configured yet."
     if SUPPORT:
         markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="👨‍💻 Contact Support", url=f"https://t.me/{SUPPORT}")], [InlineKeyboardButton(text="⬅️ Main Menu", callback_data="home")]])
-        text = f"💬 Support\n\nContact @{SUPPORT}"
+        text = f"👨‍💻 Admin Support\n\nContact @{SUPPORT}"
     await q.message.edit_text(text, reply_markup=markup)
     await q.answer()
 
@@ -360,7 +365,7 @@ async def home(q: CallbackQuery):
     if not await is_member(q.from_user.id):
         await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
         return await q.answer("Join the channel first.", show_alert=True)
-    await q.message.edit_text("🏠 Main Menu", reply_markup=main_menu())
+    await q.message.edit_text(WELCOME_TEXT, reply_markup=main_menu())
     await q.answer()
 
 @dp.callback_query(F.data == "noop")
