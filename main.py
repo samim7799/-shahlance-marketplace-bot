@@ -158,6 +158,7 @@ async def profile(q: CallbackQuery):
     )
     await q.answer()
 
+
 @dp.callback_query(F.data == "market")
 async def market(q: CallbackQuery):
     if not await is_member(q.from_user.id):
