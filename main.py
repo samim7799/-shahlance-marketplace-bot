@@ -32,7 +32,16 @@ WELCOME_TEXT = (
     "🧑🏼‍💻24/7 Live OnlineSupport"
 )
 
-
+MARKET_TEXT = (
+    "🛍️ **ShahLance Digital Marketplace** 🛍️\n\n"
+    "Explore our premium, verified digital products and services below. "
+    "Select your preferred category to view available items and place your order securely.\n\n"
+    "💎 **Why Shop With Us?**\n"
+    "• **Fast & Reliable Delivery:** Get your items instantly or within a short processing time.\n"
+    "• **100% Secure Escrow:** Your funds are fully protected until the order is successfully fulfilled.\n"
+    "• **Trusted Quality:** All listed services and products are strictly verified.\n\n"
+    "👇 **Select a category below to browse items:**"
+)
 
 def con():
     c = sqlite3.connect(DB)
@@ -173,7 +182,7 @@ async def market(q: CallbackQuery):
     c.close()
     buttons = [[(r["name"], f"cat:{r['id']}")] for r in rows] or [[("No categories yet", "noop")]]
     buttons.append([("⬅️ Main Menu", "home")])
-    await q.message.edit_text(WELCOME_TEXT, reply_markup=K(buttons))
+    await q.message.edit_text(MARKET_TEXT, reply_markup=K(buttons), parse_mode="Markdown")
     await q.answer()
 
 @dp.callback_query(F.data.startswith("cat:"))
