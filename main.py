@@ -457,40 +457,22 @@ async def aseller(m: Message):
     await m.answer("Seller approved")
     await bot.send_message(chat_id=int(p[1]), text="✅ Seller application approved.")
 
-async def seed(m: Message):
+@dp.message(Command("reset_cats"))
+async def reset_cats(m: Message):
     if m.from_user.id != ADMIN_ID:
         return
     c = con()
-    cats = [("👤 Accounts", None), ("📱 SMM Services", None), ("💻 Software & Licenses", None), ("🎮 Gaming", None), ("🌐 Hosting", None), ("🛠 Custom Services", None)]
-    for name, parent in cats:
-        c.execute("INSERT INTO categories(name,parent_id) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id IS ?)", (name, parent, name, parent))
-    pairs = [
-        ("👤 Accounts", ["📱 Social Accounts", "💘 Dating Accounts", "₿ Crypto-related Accounts", "🎮 Gaming Accounts", "📧 Email Accounts"]),
-        ("📱 SMM Services", ["👥 Followers", "❤️ Likes", "💬 Comments", "👁 Views", "🔄 Shares", "📸 Instagram", "🎵 TikTok", "▶️ YouTube", "📱 Telegram"])
-    ]
-    for parent, subs in pairs:
-        r = c.execute("SELECT id FROM categories WHERE name=? AND parent_id IS NULL", (parent,)).fetchone()
-        for s in subs:
-            if r:
-                c.execute("INSERT INTO categories(name,parent_id) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id=?)", (s, r["id"], s, r["id"]))
+    c.execute("DROP TABLE IF EXISTS categories")
     c.commit()
     c.close()
-    await m.answer("✅ Starter categories created.")
-
-async def main():
     init()
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    await m.answer("✅ Categories table reset successfully! Now type /seed")
 
 @dp.message(Command("seed"))
 async def seed(m: Message):
     if m.from_user.id != ADMIN_ID:
         return
     c = con()
-    
-    # সব মূল ক্যাটাগরি একবারে তৈরি করা
     main_cats = [
         "Accounts", "Crypto", "Flash Crypto", "Gift Cards", 
         "Currency Exchange", "Virtual Payment Cards", "SMM Services", 
@@ -499,25 +481,27 @@ async def seed(m: Message):
         "Proxy & VPN", "Documents", "Security & Hacking", "Software", 
         "Dedicated Teams", "Gaming", "Learning Course", "Pages & Channels", "Custom Services"
     ]
-    
     for cat in main_cats:
         c.execute("INSERT INTO categories(name,parent_id) SELECT ?,NULL WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id IS NULL)", (cat, cat))
     
-    # স্পেশাল কিছু সাব-ক্যাটাগরি যুক্ত করা
     sub_pairs = [
         ("Accounts", ["Social Accounts", "Streaming Accounts", "Crypto Wallets", "Gaming IDs"]),
         ("SMM Services", ["Followers", "Likes & Comments", "Views & Shares"]),
         ("Crypto", ["BTC Wallets", "USDT Accounts", "Exchanges Verified"]),
-        ("Hosting & VPS", ["Linux VPS", "Windows RDP", "Web Hosting"])
+        ("VPS & Dedicated", ["Linux VPS", "Windows RDP", "Web Hosting"])
     ]
-    
     for parent, subs in sub_pairs:
         r = c.execute("SELECT id FROM categories WHERE name=? AND parent_id IS NULL", (parent,)).fetchone()
         if r:
             for s in subs:
                 c.execute("INSERT INTO categories(name,parent_id) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id=?)", (s, r["id"], s, r["id"]))
-                
     c.commit()
     c.close()
     await m.answer("✅ All categories and subcategories created successfully!")
 
+async def main():
+    init()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
