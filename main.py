@@ -232,17 +232,21 @@ async def prod(q: CallbackQuery):
     if not p:
         return await q.answer("Product unavailable", show_alert=True)
     
-    s_name = f"@{seller['username']}" if seller and seller["username"] else f"User_{p['seller_id']}"
+    s_uname = seller["username"] if seller and seller["username"] else ""
+    s_name = f"@{s_uname}" if s_uname else f"User_{p['seller_id']}"
+    s_link = f"t.me/{s_uname}" if s_uname else ""
+    desc = p["description"] if p["description"] else "No description"
+    
     text = (
         f"🤖 **{p['name']}**\n"
         f"💰 **Price:** {p['price']} {CURRENCY}\n"
         f"⭐ **Rating:** {p['rating']} / 5.0 ({p['reviews_count']} Reviews)\n"
         f"🛒 **Sold:** {p['sold_count']} Units\n"
-        f"👤 **Seller:** [{s_name}](t.me/{seller['username'] if seller and seller['username'] else ''})\n"
+        f"👤 **Seller:** [{s_name}]({s_link})\n"
         f"📍 **Location:** Global\n"
         f"🟢 **Status:** Online\n"
         f"🛡️ **Escrow Protected:** 100% Safe\n\n"
-        f"📝 **Description:**\n{p['description'] or 'No description'}\n\n"
+        f"📝 **Description:**\n{desc}\n\n"
         f"📦 **Stock Available:** {p['stock']}"
     )
     markup = K([
@@ -251,28 +255,6 @@ async def prod(q: CallbackQuery):
         [("⬅️ Back to Marketplace", "market")]
     ])
     await q.message.edit_text(text, reply_markup=markup, parse_mode="Markdown")
-    await q.answer()
-
-@dp.callback_query(F.data.startswith("seller_prof:"))
-async def seller_prof(q: CallbackQuery):
-    sid = int(q.data.split(":")[1])
-    c = con()
-    seller = c.execute("SELECT * FROM users WHERE id=?", (sid,)).fetchone()
-    p_count = c.execute("SELECT COUNT(*) n FROM products WHERE seller_id=? AND status='approved'", (sid,)).fetchone()["n"]
-    orders_count = c.execute("SELECT COUNT(*) n FROM orders WHERE seller_id=? AND status='completed'", (sid,)).fetchone()["n"]
-    c.close()
-    
-    s_name = f"@{seller['username']}" if seller and seller["username"] else f"User_{sid}"
-    text = (
-        f"👤 **Seller Profile:** {s_name}\n\n"
-        f"⭐ **Rating:** 4.9 / 5.0\n"
-        f"🛒 **Total Sales:** {orders_count}\n"
-        f"📦 **Active Products:** {p_count}\n"
-        f"💬 **Reviews:** Verified\n"
-        f"📅 **Member Since:** 2026\n"
-        f"📍 **Location:** Verified"
-    )
-    await q.message.edit_text(text, reply_markup=K([[("⬅️ Back", "market")]]))
     await q.answer()
 
 @dp.callback_query(F.data.startswith("buy:"))
