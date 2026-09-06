@@ -25,7 +25,7 @@ WELCOME_TEXT = (
     "🌟Welcome To ShahLance.Com\n\n"
     "🛍️All in One Digital Marketplace\n\n\n"
     "🥰 Satisfaction  Guarantee\n"
-    "🛡️ 100% Escrow Security\n"
+    "🖇️100% Escrow Security\n"
     "🔒 Secure & Verified Deals\n"
     "⚡ Instant & Auto  Delivery\n"
     " ✅ Verified  & Safe  Sellers\n"
