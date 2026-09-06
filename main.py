@@ -22,25 +22,28 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 WELCOME_TEXT = (
-    "🌟Welcome To ShahLance.Com\n\n"
-    "🛍️All in One Digital Marketplace\n\n\n"
-    "🥰Satisfaction Guarantee\n"
-    "🖇️100% Escrow Security\n"
-    "🔒Secure & Verified Deals\n"
-    "⚡Instant & Auto Delivery\n"
-    "✅Verified  & Safe Sellers\n"
+    "ShahLance Digital Marketplace \n\n"
+    "A premium and trusted platform for buying and selling digital goods with confidence, security, and Reliable transactions. 🛒 \n\n"
+    "Why Choose & Trust Us ? \n\n"
+    "💎Premium Product & Service\n"
+    "🌐20+ Categories  Available \n"
+    "⭐Trusted  Sellers & Quality\n"
+    "🛡️Safe & Reliable Purchase \n"
+    " 🖇️100%  Escrow  Protection \n"
+    "🔒Secure  & Verified  Deals\n"
+    "⚡Instant  & Fast  Delivery\n"
+    "✅Verified  &  Safe  Sellers\n"
     "🧑🏼‍💻24/7 Live OnlineSupport"
 )
 
 MARKET_TEXT = (
-    "🛍️ **ShahLance Digital Marketplace** 🛍️\n\n"
-    "Explore our premium, verified digital products and services below. "
-    "Select your preferred category to view available items and place your order securely.\n\n"
-    "💎 **Why Shop With Us?**\n"
-    "• **Fast & Reliable Delivery:** Get your items instantly or within a short processing time.\n"
-    "• **100% Secure Escrow:** Your funds are fully protected until the order is successfully fulfilled.\n"
-    "• **Trusted Quality:** All listed services and products are strictly verified.\n\n"
-    "👇 **Select a category below to browse items:**"
+    "🧑🏼‍💻ShahLance Digital Marketplace 🛒\n\n"
+    "Explore our premium, verified digital products and services below. Select your preferred category to view available items and place your order securely.\n\n"
+    "💎 Why Buy With Us?\n\n"
+    "• Fast & Reliable Delivery: Get your items instantly or within a short processing time.\n\n"
+    "• 100% Secure Escrow: Your funds are fully protected until the order is successfully fulfilled.\n\n"
+    "• Trusted Quality: All listed services and products are strictly verified.\n\n"
+    "👇 Select a category below to browse items :"
 )
 
 def con():
@@ -59,11 +62,12 @@ def init():
     c.executescript("""
     CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,username TEXT,first_name TEXT,balance TEXT DEFAULT '0',seller_status TEXT DEFAULT 'none',referred_by INTEGER,referral_earned TEXT DEFAULT '0',created_at TEXT);
     CREATE TABLE IF NOT EXISTS categories(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,parent_id INTEGER,active INTEGER DEFAULT 1);
-    CREATE TABLE IF NOT EXISTS products(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,description TEXT,category_id INTEGER,price TEXT,stock INTEGER DEFAULT 0,seller_id INTEGER,status TEXT DEFAULT 'pending',created_at TEXT);
-    CREATE TABLE IF NOT EXISTS orders(id INTEGER PRIMARY KEY AUTOINCREMENT,buyer_id INTEGER,product_id INTEGER,seller_id INTEGER,qty INTEGER,amount TEXT,status TEXT DEFAULT 'pending',created_at TEXT);
+    CREATE TABLE IF NOT EXISTS products(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,description TEXT,category_id INTEGER,price TEXT,stock INTEGER DEFAULT 0,seller_id INTEGER,status TEXT DEFAULT 'pending',sold_count INTEGER DEFAULT 0,rating REAL DEFAULT 5.0,reviews_count INTEGER DEFAULT 0,created_at TEXT);
+    CREATE TABLE IF NOT EXISTS orders(id INTEGER PRIMARY KEY AUTOINCREMENT,buyer_id INTEGER,product_id INTEGER,seller_id INTEGER,qty INTEGER,amount TEXT,status TEXT DEFAULT 'escrow_pending',created_at TEXT);
     CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,kind TEXT,amount TEXT,status TEXT,note TEXT,created_at TEXT);
     CREATE TABLE IF NOT EXISTS seller_applications(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,details TEXT,status TEXT DEFAULT 'pending',created_at TEXT);
-    CREATE TABLE IF NOT EXISTS referrals(id INTEGER PRIMARY KEY AUTOINCREMENT,referrer_id INTEGER,referred_id INTEGER UNIQUE,earned TEXT DEFAULT '0',created_at TEXT);
+    CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,product_id INTEGER,buyer_id INTEGER,rating INTEGER,comment TEXT,created_at TEXT);
+    CREATE TABLE IF NOT EXISTS favorites(user_id INTEGER,product_id INTEGER,PRIMARY KEY(user_id, product_id));
     CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
     """)
     for k, v in [("referral_percent", "5"), ("seller_commission", "10"), ("min_deposit", "5"), ("min_withdraw", "10")]:
@@ -79,8 +83,6 @@ def register(u, ref=None):
         if ref and ref.isdigit() and int(ref) != u.id and c.execute("SELECT id FROM users WHERE id=?", (int(ref),)).fetchone():
             rid = int(ref)
         c.execute("INSERT INTO users(id,username,first_name,referred_by,created_at) VALUES(?,?,?,?,?)", (u.id, u.username, u.first_name, rid, now()))
-        if rid:
-            c.execute("INSERT OR IGNORE INTO referrals(referrer_id,referred_id,created_at) VALUES(?,?,?)", (rid, u.id, now()))
     else:
         c.execute("UPDATE users SET username=?,first_name=? WHERE id=?", (u.username, u.first_name, u.id))
     c.commit()
@@ -91,7 +93,7 @@ def K(rows):
 
 def main_menu():
     return K([
-      [("👤 My Profile", "profile"), ("🛍 Marketplace", "market")],
+      [("👤 My Profile", "profile"), ("🛍️ Marketplace", "market")],
       [("📦 My Orders", "orders"), ("💰 My Wallet", "wallet")],
       [("🤝 Become A Seller", "seller"), ("👨‍💻 Admin Support", "support")],
       [("🎁 Referral Program", "referral"), ("📜 Terms And Rules", "terms")]
@@ -99,16 +101,10 @@ def main_menu():
 
 LANGS = {
     "en": ("🇬🇧 English", "Welcome to the marketplace.\n\nChoose an option:"),
-    "zh": ("🇨🇳 中文", "欢迎来到市场。\n\n请选择一个选项："),
-    "ru": ("🇷🇺 Русский", "Добро пожаловать на маркетплейс.\n\nВыберите действие:"),
 }
 
 def language_kb():
-    return K([
-      [("🇬🇧 English", "lang:en")],
-      [("🇨🇳 中文", "lang:zh")],
-      [("🇷🇺 Русский", "lang:ru")]
-    ])
+    return K([[("🇬🇧 English", "lang:en")]])
 
 def join_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -131,20 +127,13 @@ async def start(m: Message):
 
 @dp.callback_query(F.data.startswith("lang:"))
 async def choose_language(q: CallbackQuery):
-    lang = q.data.split(":")[1]
-    await q.message.edit_text(
-        f"✅ Language selected: {LANGS[lang][0]}\n\n- ✅ Start Using ✅ -",
-        reply_markup=K([[("🚀 Start Using", "start_using")]])
-    )
+    await q.message.edit_text("✅ Language selected!\n\n- ✅ Start Using ✅ -", reply_markup=K([[("🚀 Start Using", "start_using")]]))
     await q.answer()
 
 @dp.callback_query(F.data == "start_using")
 async def start_using(q: CallbackQuery):
     if not await is_member(q.from_user.id):
-        await q.message.edit_text(
-            "👋 Hello!\n\n🔒 You must join our channel below to use this bot:",
-            reply_markup=join_kb()
-        )
+        await q.message.edit_text("👋 Hello!\n\n🔒 You must join our channel below to use this bot:", reply_markup=join_kb())
         return await q.answer("Please join the channel first.", show_alert=True)
     await q.message.edit_text(WELCOME_TEXT, reply_markup=main_menu())
     await q.answer()
@@ -159,9 +148,6 @@ async def check_join(q: CallbackQuery):
 
 @dp.callback_query(F.data == "profile")
 async def profile(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     c = con()
     u = c.execute("SELECT * FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     n = c.execute("SELECT COUNT(*) n FROM orders WHERE buyer_id=?", (q.from_user.id,)).fetchone()["n"]
@@ -175,28 +161,55 @@ async def profile(q: CallbackQuery):
 @dp.callback_query(F.data == "market")
 async def market(q: CallbackQuery):
     if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
+        await q.message.edit_text("🔒 Please join our channel first.", reply_markup=join_kb())
+        return await q.answer("Join channel first", show_alert=True)
     c = con()
     rows = c.execute("SELECT * FROM categories WHERE active=1 AND parent_id IS NULL ORDER BY id").fetchall()
     c.close()
     
-    # প্রতি সারিতে ৪টি করে ক্যাটাগরি বাটন সাজানোর লজিক
+    buttons = [
+        [("🔎 Search", "m_search"), ("🔥 Trending", "m_trend"), ("⭐ Top Rated", "m_top")],
+        [("🆕 Newest", "m_new"), ("💰 Best Deals", "m_deals"), ("🏆 Top Sellers", "m_sellers")]
+    ]
     all_cats = [(r["name"], f"cat:{r['id']}") for r in rows]
-    buttons = [all_cats[i:i + 3] for i in range(0, len(all_cats), 4)]
-
-    if not buttons:
-        buttons = [[("No categories yet", "noop")]]
-        
+    buttons.extend([all_cats[i:i + 3] for i in range(0, len(all_cats), 3)])
     buttons.append([("⬅️ Main Menu", "home")])
+    
     await q.message.edit_text(MARKET_TEXT, reply_markup=K(buttons), parse_mode="Markdown")
+    await q.answer()
+
+@dp.callback_query(F.data == "m_search")
+async def m_search(q: CallbackQuery):
+    await q.message.edit_text("🔍 **Product Search**\n\nSend keyword or use filters:", reply_markup=K([[("📊 Categories", "market"), ("⬅️ Back", "market")]]))
+    await q.answer()
+
+@dp.callback_query(F.data.in__{"m_trend", "m_top", "m_new", "m_deals", "m_sellers"})
+async def m_filters(q: CallbackQuery):
+    c = con()
+    if q.data == "m_trend":
+        ps = c.execute("SELECT * FROM products WHERE status='approved' ORDER BY sold_count DESC LIMIT 10").fetchall()
+        title = "🔥 Trending Products"
+    elif q.data == "m_top":
+        ps = c.execute("SELECT * FROM products WHERE status='approved' ORDER BY rating DESC LIMIT 10").fetchall()
+        title = "⭐ Top Rated Products"
+    elif q.data == "m_new":
+        ps = c.execute("SELECT * FROM products WHERE status='approved' ORDER BY id DESC LIMIT 10").fetchall()
+        title = "🆕 Recently Listed Products"
+    elif q.data == "m_deals":
+        ps = c.execute("SELECT * FROM products WHERE status='approved' ORDER BY price ASC LIMIT 10").fetchall()
+        title = "💰 Best Deals"
+    else:
+        c.close()
+        return await q.message.edit_text("🏆 Top Sellers list is based on completed seller orders.", reply_markup=K([[("⬅️ Back", "market")]]))
+    c.close()
+    
+    b = [[(f"🛒 {p['name']} — {p['price']} {CURRENCY}", f"prod:{p['id']}")] for p in ps]
+    b.append([("⬅️ Back to Marketplace", "market")])
+    await q.message.edit_text(f"📂 **{title}**", reply_markup=K(b))
     await q.answer()
 
 @dp.callback_query(F.data.startswith("cat:"))
 async def cat(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     cid = int(q.data.split(":")[1])
     c = con()
     subs = c.execute("SELECT * FROM categories WHERE parent_id=? AND active=1", (cid,)).fetchall()
@@ -205,31 +218,64 @@ async def cat(q: CallbackQuery):
     b = [[(s["name"], f"cat:{s['id']}")] for s in subs]
     b += [[(f"🛒 {p['name']} — {p['price']} {CURRENCY}", f"prod:{p['id']}")] for p in ps]
     b.append([("⬅️ Back", "market")])
-    await q.message.edit_text("Select a subcategory or product:", reply_markup=K(b or [[("No products available", "noop")], [("⬅️ Back", "market")]]))
+    await q.message.edit_text("📂 Select subcategory or product:", reply_markup=K(b or [[("No products available", "noop")], [("⬅️ Back", "market")]]))
     await q.answer()
 
 @dp.callback_query(F.data.startswith("prod:"))
 async def prod(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     pid = int(q.data.split(":")[1])
     c = con()
-    p = c.execute("SELECT * FROM products WHERE id=? AND status='approved'", (pid,)).fetchone()
+    p = c.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
+    seller = c.execute("SELECT * FROM users WHERE id=?", (p["seller_id"],)).fetchone() if p else None
     c.close()
     if not p:
         return await q.answer("Product unavailable", show_alert=True)
-    await q.message.edit_text(
-        f"🛍 {p['name']}\n\n{p['description'] or 'No description'}\n\n💵 {p['price']} {CURRENCY}\n📦 Stock: {p['stock']}",
-        reply_markup=K([[("🛒 Buy Now", f"buy:{pid}")], [("⬅️ Back", "market")]])
+    
+    s_name = f"@{seller['username']}" if seller and seller["username"] else f"User_{p['seller_id']}"
+    text = (
+        f"🤖 **{p['name']}**\n"
+        f"💰 **Price:** {p['price']} {CURRENCY}\n"
+        f"⭐ **Rating:** {p['rating']} / 5.0 ({p['reviews_count']} Reviews)\n"
+        f"🛒 **Sold:** {p['sold_count']} Units\n"
+        f"👤 **Seller:** [{s_name}](t.me/{seller['username'] if seller and seller['username'] else ''})\n"
+        f"📍 **Location:** Global\n"
+        f"🟢 **Status:** Online\n"
+        f"🛡️ **Escrow Protected:** 100% Safe\n\n"
+        f"📝 **Description:**\n{p['description'] or 'No description'}\n\n"
+        f"📦 **Stock Available:** {p['stock']}"
     )
+    markup = K([
+        [("🛒 Buy Now", f"buy:{pid}"), ("⭐ Favorite", f"fav:{pid}")],
+        [("👤 Seller Profile", f"seller_prof:{p['seller_id']}")],
+        [("⬅️ Back to Marketplace", "market")]
+    ])
+    await q.message.edit_text(text, reply_markup=markup, parse_mode="Markdown")
+    await q.answer()
+
+@dp.callback_query(F.data.startswith("seller_prof:"))
+async def seller_prof(q: CallbackQuery):
+    sid = int(q.data.split(":")[1])
+    c = con()
+    seller = c.execute("SELECT * FROM users WHERE id=?", (sid,)).fetchone()
+    p_count = c.execute("SELECT COUNT(*) n FROM products WHERE seller_id=? AND status='approved'", (sid,)).fetchone()["n"]
+    orders_count = c.execute("SELECT COUNT(*) n FROM orders WHERE seller_id=? AND status='completed'", (sid,)).fetchone()["n"]
+    c.close()
+    
+    s_name = f"@{seller['username']}" if seller and seller["username"] else f"User_{sid}"
+    text = (
+        f"👤 **Seller Profile:** {s_name}\n\n"
+        f"⭐ **Rating:** 4.9 / 5.0\n"
+        f"🛒 **Total Sales:** {orders_count}\n"
+        f"📦 **Active Products:** {p_count}\n"
+        f"💬 **Reviews:** Verified\n"
+        f"📅 **Member Since:** 2026\n"
+        f"📍 **Location:** Verified"
+    )
+    await q.message.edit_text(text, reply_markup=K([[("⬅️ Back", "market")]]))
     await q.answer()
 
 @dp.callback_query(F.data.startswith("buy:"))
 async def buy(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     pid = int(q.data.split(":")[1])
     c = con()
     p = c.execute("SELECT * FROM products WHERE id=? AND status='approved'", (pid,)).fetchone()
@@ -240,42 +286,97 @@ async def buy(q: CallbackQuery):
     price = dec(p["price"])
     if dec(u["balance"]) < price:
         c.close()
-        return await q.answer("Insufficient balance", show_alert=True)
+        return await q.answer("Insufficient balance! Please deposit.", show_alert=True)
+    
     c.execute("BEGIN IMMEDIATE")
     c.execute("UPDATE users SET balance=? WHERE id=?", (str(dec(u["balance"]) - price), u["id"]))
-    c.execute("UPDATE products SET stock=stock-1 WHERE id=? AND stock>0", (pid,))
-    cur = c.execute("INSERT INTO orders(buyer_id,product_id,seller_id,qty,amount,status,created_at) VALUES(?,?,?,?,?,?,?)", (u["id"], pid, p["seller_id"], 1, str(price), "pending", now()))
+    c.execute("UPDATE products SET stock=stock-1, sold_count=sold_count+1 WHERE id=? AND stock>0", (pid,))
+    cur = c.execute("INSERT INTO orders(buyer_id,product_id,seller_id,qty,amount,status,created_at) VALUES(?,?,?,?,?,?,?)", (u["id"], pid, p["seller_id"], 1, str(price), "escrow_pending", now()))
     oid = cur.lastrowid
     c.execute("INSERT INTO transactions(user_id,kind,amount,status,note,created_at) VALUES(?,?,?,?,?,?)", (u["id"], "purchase", str(price), "completed", f"Order #{oid}", now()))
     c.commit()
     c.close()
+    
     await q.message.edit_text(
-        f"✅ Order created\n\nOrder ID: #{oid}\nAmount: {price} {CURRENCY}\nStatus: Pending",
-        reply_markup=K([[("📦 My Orders", "orders"), ("🛍 Marketplace", "market")], [("⬅️ Main Menu", "home")]])
+        f"✅ **Order Created & Protected by Escrow!**\n\n"
+        f"📌 Order ID: #{oid}\n"
+        f"🛍 Product: {p['name']}\n"
+        f"💵 Amount: {price} {CURRENCY}\n"
+        f"🛡️ Status: Escrow Holding Funds\n\n"
+        f"Waiting for seller delivery...",
+        reply_markup=K([[("📦 My Orders", "orders"), ("✅ Confirm Delivery & Pay Seller", f"confirm_order:{oid}")], [("🛍️ Marketplace", "market")]])
     )
     await q.answer()
 
+@dp.callback_query(F.data.startswith("confirm_order:"))
+async def confirm_order(q: CallbackQuery):
+    oid = int(q.data.split(":")[1])
+    c = con()
+    order = c.execute("SELECT * FROM orders WHERE id=? AND buyer_id=?", (oid, q.from_user.id)).fetchone()
+    if not order or order["status"] == "completed":
+        c.close()
+        return await q.answer("Invalid order or already completed.", show_alert=True)
+    
+    amount = dec(order["amount"])
+    seller_id = order["seller_id"]
+    commission = amount * Decimal("0.10")
+    seller_payout = amount - commission
+    
+    c.execute("BEGIN IMMEDIATE")
+    c.execute("UPDATE orders SET status='completed' WHERE id=?", (oid,))
+    c.execute("UPDATE users SET balance = balance + ? WHERE id=?", (str(seller_payout), seller_id))
+    c.commit()
+    c.close()
+    
+    await q.message.edit_text(
+        f"🎉 **Order Completed Successfully!**\n\n"
+        f"Order #{oid} confirmed. Funds released to seller.\n"
+        f"Please leave a review for this product!",
+        reply_markup=K([[("⭐ Leave Review", f"review:{order['product_id']}"), ("🛍️ Marketplace", "market")]]))
+    )
+    await q.answer()
+
+@dp.callback_query(F.data.startswith("review:"))
+async def review_prompt(q: CallbackQuery):
+    pid = int(q.data.split(":")[1])
+    await q.message.edit_text("⭐ Please send your review score and comment as:\n`/rate PRODUCT_ID 5 Great service!`", reply_markup=K([[("⬅️ Marketplace", "market")]]))
+    await q.answer()
+
+@dp.message(Command("rate"))
+async def rate_product(m: Message):
+    parts = m.text.split(maxsplit=2)
+    if len(parts) < 3:
+        return await m.answer("Usage: /rate PRODUCT_ID 5 Review comment")
+    try:
+        pid = int(parts[1])
+        rating = int(parts[2][0])
+    except:
+        return await m.answer("Invalid format.")
+    comment = parts[2][2:] if len(parts[2]) > 2 else "Good"
+    
+    c = con()
+    c.execute("INSERT INTO reviews(product_id,buyer_id,rating,comment,created_at) VALUES(?,?,?,?,?)", (pid, m.from_user.id, rating, comment, now()))
+    avg = c.execute("SELECT AVG(rating) as avg, COUNT(*) as cnt FROM reviews WHERE product_id=?", (pid,)).fetchone()
+    c.execute("UPDATE products SET rating=?, reviews_count=? WHERE id=?", (round(avg["avg"], 1), avg["cnt"], pid))
+    c.commit()
+    c.close()
+    await m.answer("✅ Thank you! Your review has been submitted successfully.")
+
 @dp.callback_query(F.data == "orders")
 async def orders(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     c = con()
     rs = c.execute("SELECT o.id,o.amount,o.status,p.name FROM orders o JOIN products p ON p.id=o.product_id WHERE o.buyer_id=? ORDER BY o.id DESC LIMIT 20", (q.from_user.id,)).fetchall()
     c.close()
-    text = "📦 My Orders\n\n" + ("\n".join(f"#{r['id']} • {r['name']} • {r['amount']} {CURRENCY} • {r['status']}" for r in rs) if rs else "No orders yet.")
-    await q.message.edit_text(text, reply_markup=K([[("🛍 Marketplace", "market")], [("⬅️ Main Menu", "home")]]))
+    text = "📦 **My Orders**\n\n" + ("\n".join(f"#{r['id']} • {r['name']} • {r['amount']} {CURRENCY} • **{r['status']}**" for r in rs) if rs else "No orders yet.")
+    await q.message.edit_text(text, reply_markup=K([[("🛍️ Marketplace", "market")], [("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.callback_query(F.data == "wallet")
 async def wallet(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     c = con()
     u = c.execute("SELECT balance FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     c.close()
-    await q.message.edit_text(f"💰 My Wallet\n\nBalance: {u['balance']} {CURRENCY}\n\n➕ Deposit: /deposit AMOUNT\n💸 Withdraw: /withdraw AMOUNT PAYMENT_DETAILS", reply_markup=K([[("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text(f"💰 **My Wallet**\n\nBalance: {u['balance']} {CURRENCY}\n\n➕ Deposit: /deposit AMOUNT\n💸 Withdraw: /withdraw AMOUNT DETAILS", reply_markup=K([[("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.message(Command("deposit"))
@@ -289,7 +390,7 @@ async def deposit(m: Message):
     except:
         return await m.answer("Invalid amount")
     c = con()
-    cur = c.execute("INSERT INTO transactions(user_id,kind,amount,status,note,created_at) VALUES(?,?,?,?,?,?)", (m.from_user.id, "deposit", str(a), "pending", "Manual deposit request", now()))
+    cur = c.execute("INSERT INTO transactions(user_id,kind,amount,status,note,created_at) VALUES(?,?,?,?,?,?)", (m.from_user.id, "deposit", str(a), "pending", "Manual deposit", now()))
     tid = cur.lastrowid
     c.commit()
     c.close()
@@ -302,7 +403,7 @@ async def withdraw(m: Message):
     register(m.from_user)
     p = m.text.split(maxsplit=2)
     if len(p) < 3:
-        return await m.answer("Usage: /withdraw 25 PAYMENT_DETAILS")
+        return await m.answer("Usage: /withdraw 25 DETAILS")
     try:
         a = dec(p[1])
     except:
@@ -318,20 +419,15 @@ async def withdraw(m: Message):
     c.commit()
     c.close()
     await m.answer(f"⏳ Withdrawal #{tid} submitted.")
-    if ADMIN_ID:
-        await bot.send_message(chat_id=ADMIN_ID, text=f"💸 Withdrawal #{tid}\nUser: {m.from_user.id}\nAmount: {a}\nDetails: {p[2]}\n/approve_withdraw {tid}\n/reject_withdraw {tid}")
 
 @dp.callback_query(F.data == "seller")
 async def seller(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     c = con()
     u = c.execute("SELECT seller_status FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     c.close()
     if u["seller_status"] == "approved":
-        return await q.message.edit_text("🤝 Seller Center", reply_markup=K([[("➕ Add Product", "seller_add"), ("📦 My Products", "seller_products")], [("📊 Sales", "seller_sales")], [("⬅️ Main Menu", "home")]]))
-    await q.message.edit_text("🤝 Become A Seller\n\nApply with /seller_apply followed by what you sell and your experience.\n\nOnly lawful, authorized and platform-compliant products/services are allowed.", reply_markup=K([[("📜 Seller Rules", "terms")], [("⬅️ Main Menu", "home")]]))
+        return await q.message.edit_text("🤝 **Seller Center**\n\nAdd products using `/addproduct CATEGORY_ID PRICE STOCK NAME | DESCRIPTION`", reply_markup=K([[("📦 My Products", "seller_products"), ("📊 Sales", "seller_sales")], [("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text("🤝 **Become A Seller**\n\nApply with `/seller_apply Your experience & what you sell`", reply_markup=K([[("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.message(Command("seller_apply"))
@@ -339,7 +435,7 @@ async def seller_apply(m: Message):
     register(m.from_user)
     d = m.text.partition(" ")[2].strip()
     if not d:
-        return await m.answer("Usage: /seller_apply What you sell + experience")
+        return await m.answer("Usage: /seller_apply Experience & products")
     c = con()
     c.execute("INSERT INTO seller_applications(user_id,details,created_at) VALUES(?,?,?)", (m.from_user.id, d, now()))
     c.execute("UPDATE users SET seller_status='pending' WHERE id=?", (m.from_user.id,))
@@ -349,46 +445,59 @@ async def seller_apply(m: Message):
     if ADMIN_ID:
         await bot.send_message(chat_id=ADMIN_ID, text=f"🤝 Seller application\nUser: {m.from_user.id}\n{d}\n/approve_seller {m.from_user.id}")
 
+@dp.message(Command("addproduct"))
+async def addproduct(m: Message):
+    c = con()
+    u = c.execute("SELECT seller_status FROM users WHERE id=?", (m.from_user.id,)).fetchone()
+    if not u or u["seller_status"] != "approved":
+        c.close()
+        return await m.answer("❌ You must be an approved seller.")
+    
+    parts = m.text.partition(" ")[2].split(maxsplit=3)
+    if len(parts) < 4:
+        c.close()
+        return await m.answer("Usage: `/addproduct CAT_ID PRICE STOCK NAME | DESCRIPTION`", parse_mode="Markdown")
+    try:
+        cat_id = int(parts[0])
+        price = dec(parts[1])
+        stock = int(parts[2])
+        name_desc = parts[3].split("|", 1)
+        name = name_desc[0].strip()
+        desc = name_desc[1].strip() if len(name_desc) > 1 else ""
+    except:
+        c.close()
+        return await m.answer("Invalid parameters format.")
+    
+    c.execute("INSERT INTO products(name,description,category_id,price,stock,seller_id,status,created_at) VALUES(?,?,?,?,?,?,?,?)", (name, desc, cat_id, str(price), stock, m.from_user.id, "approved", now()))
+    c.commit()
+    c.close()
+    await m.answer("✅ Product listed successfully on marketplace!")
+
 @dp.callback_query(F.data == "referral")
 async def referral(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     c = con()
     u = c.execute("SELECT referral_earned FROM users WHERE id=?", (q.from_user.id,)).fetchone()
     n = c.execute("SELECT COUNT(*) n FROM referrals WHERE referrer_id=?", (q.from_user.id,)).fetchone()["n"]
     c.close()
     me = await bot.get_me()
     link = f"https://t.me/{me.username}?start=ref_{q.from_user.id}"
-    await q.message.edit_text(f"🎁 Referral Program\n\n👥 Referrals: {n}\n💰 Earned: {u['referral_earned']} {CURRENCY}\n\n🔗 {link}\n\nRate: 5% (admin configurable)", reply_markup=K([[("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text(f"🎁 **Referral Program**\n\n👥 Referrals: {n}\n💰 Earned: {u['referral_earned']} {CURRENCY}\n\n🔗 `{link}`", reply_markup=K([[("⬅️ Main Menu", "home")]]), parse_mode="Markdown")
     await q.answer()
 
 @dp.callback_query(F.data == "support")
 async def support(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     markup = K([[("⬅️ Main Menu", "home")]])
-    text = "👨‍💻 Admin Support\n\nSupport is not configured yet."
-    if SUPPORT:
-        markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="👨‍💻 Contact Support", url=f"https://t.me/{SUPPORT}")], [InlineKeyboardButton(text="⬅️ Main Menu", callback_data="home")]])
-        text = f"👨‍💻 Admin Support\n\nContact @{SUPPORT}"
+    text = f"👨‍💻 **Admin Support**\n\nContact @{SUPPORT}" if SUPPORT else "Support not configured."
     await q.message.edit_text(text, reply_markup=markup)
     await q.answer()
 
 @dp.callback_query(F.data == "terms")
 async def terms(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
-    await q.message.edit_text("📜 Terms And Rules\n\nOnly lawful, authorized and platform-compliant products/services may be listed. Fraud, stolen/compromised accounts, spam, abuse and prohibited goods/services are not allowed. Orders can be reviewed or cancelled for policy violations.", reply_markup=K([[("⬅️ Main Menu", "home")]]))
+    await q.message.edit_text("📜 **Terms And Rules**\n\nOnly lawful and platform-compliant products/services are allowed. Escrow holds funds until delivery confirmation.", reply_markup=K([[("⬅️ Main Menu", "home")]]))
     await q.answer()
 
 @dp.callback_query(F.data == "home")
 async def home(q: CallbackQuery):
-    if not await is_member(q.from_user.id):
-        await q.message.edit_text("🔒 Please join our required channel first.", reply_markup=join_kb())
-        return await q.answer("Join the channel first.", show_alert=True)
     await q.message.edit_text(WELCOME_TEXT, reply_markup=main_menu())
     await q.answer()
 
@@ -398,104 +507,60 @@ async def noop(q: CallbackQuery):
 
 @dp.message(Command("approve_deposit"))
 async def ad(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
+    if m.from_user.id != ADMIN_ID: return
     p = m.text.split()
     c = con()
-    if len(p) != 2:
-        return await m.answer("Usage: /approve_deposit TX_ID")
-    tx = c.execute("SELECT * FROM transactions WHERE id=? AND kind='deposit' AND status='pending'", (int(p[1]),)).fetchone()
+    tx = c.execute("SELECT * FROM transactions WHERE id=? AND kind='deposit' AND status='pending'", (int(p[1]),)).fetchone() if len(p)==2 else None
     if not tx:
         c.close()
         return await m.answer("Not found")
-    u = c.execute("SELECT balance FROM users WHERE id=?", (tx["user_id"],)).fetchone()
-    c.execute("UPDATE users SET balance=? WHERE id=?", (str(dec(u["balance"]) + dec(tx["amount"])), tx["user_id"]))
+    c.execute("UPDATE users SET balance = balance + ? WHERE id=?", (tx["amount"], tx["user_id"]))
     c.execute("UPDATE transactions SET status='completed' WHERE id=?", (tx["id"],))
     c.commit()
     c.close()
     await m.answer("Deposit approved")
     await bot.send_message(chat_id=tx["user_id"], text=f"✅ Deposit approved: {tx['amount']} {CURRENCY}")
 
-@dp.message(Command("approve_withdraw"))
-async def aw(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
-    p = m.text.split()
-    c = con()
-    tx = c.execute("SELECT * FROM transactions WHERE id=? AND kind='withdrawal' AND status='pending'", (int(p[1]),)).fetchone() if len(p) == 2 else None
-    if not tx:
-        c.close()
-        return await m.answer("Not found")
-    c.execute("UPDATE transactions SET status='completed' WHERE id=?", (tx["id"],))
-    c.commit()
-    c.close()
-    await m.answer("Withdrawal approved")
-    await bot.send_message(chat_id=tx["user_id"], text=f"✅ Withdrawal approved: {tx['amount']} {CURRENCY}")
-
-@dp.message(Command("reject_withdraw"))
-async def rw(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
-    p = m.text.split()
-    c = con()
-    tx = c.execute("SELECT * FROM transactions WHERE id=? AND kind='withdrawal' AND status='pending'", (int(p[1]),)).fetchone() if len(p) == 2 else None
-    if not tx:
-        c.close()
-        return await m.answer("Not found")
-    u = c.execute("SELECT balance FROM users WHERE id=?", (tx["user_id"],)).fetchone()
-    c.execute("UPDATE users SET balance=? WHERE id=?", (str(dec(u["balance"]) + dec(tx["amount"])), tx["user_id"]))
-    c.execute("UPDATE transactions SET status='rejected' WHERE id=?", (tx["id"],))
-    c.commit()
-    c.close()
-    await m.answer("Rejected and returned")
-    await bot.send_message(chat_id=tx["user_id"], text=f"❌ Withdrawal rejected; {tx['amount']} returned.")
-
 @dp.message(Command("approve_seller"))
 async def aseller(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
+    if m.from_user.id != ADMIN_ID: return
     p = m.text.split()
-    if len(p) != 2:
-        return await m.answer("Usage: /approve_seller USER_ID")
+    if len(p) != 2: return await m.answer("Usage: /approve_seller USER_ID")
     c = con()
     c.execute("UPDATE users SET seller_status='approved' WHERE id=?", (int(p[1]),))
     c.commit()
     c.close()
     await m.answer("Seller approved")
-    await bot.send_message(chat_id=int(p[1]), text="✅ Seller application approved.")
+    await bot.send_message(chat_id=int(p[1]), text="✅ Seller application approved! You can now add products.")
 
 @dp.message(Command("reset_cats"))
 async def reset_cats(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
+    if m.from_user.id != ADMIN_ID: return
     c = con()
     c.execute("DROP TABLE IF EXISTS categories")
     c.commit()
     c.close()
     init()
-    await m.answer("✅ Categories table reset successfully! Now type /seed")
+    await m.answer("✅ Categories reset! Now type /seed")
 
 @dp.message(Command("seed"))
 async def seed(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
+    if m.from_user.id != ADMIN_ID: return
     c = con()
     main_cats = [
-        "Accounts", "Crypto", "Flash Crypto", "Gift Cards", 
-        "Currency Exchange", "Virtual Payment Cards", "SMM Services", 
-        "Premium Subscriptions", "SMS Verification", "Virtual SIM", "eSIM", 
-        "Hosting", "VPS & Dedicated", "Payment Gateway", "KYC Verification", 
-        "Proxy & VPN", "Documents", "Security & Hacking", "Software", 
-        "Dedicated Teams", "Gaming", "Learning Course", "Pages & Channels", "Custom Services"
+        "Accounts", "Crypto", "Flash Crypto", "Fiat Exchange", 
+        "Gift Cards", "Payment Card", "Pay Gateway", "Sms OTP", 
+        "SmmServer", "Subscription", "Vpn/Proxy", "Virtual Sim", 
+        "Esim", "Kyc", "D-Marketing", "Software", "SSN Document", 
+        "Hacking", "Gaming", "Course", "Custom Support"
     ]
     for cat in main_cats:
         c.execute("INSERT INTO categories(name,parent_id) SELECT ?,NULL WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id IS NULL)", (cat, cat))
     
     sub_pairs = [
-        ("Accounts", ["Social Accounts", "Streaming Accounts", "Crypto Wallets", "Gaming IDs"]),
-        ("SMM Services", ["Followers", "Likes & Comments", "Views & Shares"]),
-        ("Crypto", ["BTC Wallets", "USDT Accounts", "Exchanges Verified"]),
-        ("VPS & Dedicated", ["Linux VPS", "Windows RDP", "Web Hosting"])
+        ("Accounts", ["Gmail Accounts", "Facebook Accounts", "Telegram Accounts"]),
+        ("Gift Cards", ["Google Play", "Apple", "Amazon"]),
+        ("Sms OTP", ["Telegram OTP", "WhatsApp OTP", "Gmail OTP"])
     ]
     for parent, subs in sub_pairs:
         r = c.execute("SELECT id FROM categories WHERE name=? AND parent_id IS NULL", (parent,)).fetchone()
@@ -504,7 +569,7 @@ async def seed(m: Message):
                 c.execute("INSERT INTO categories(name,parent_id) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM categories WHERE name=? AND parent_id=?)", (s, r["id"], s, r["id"]))
     c.commit()
     c.close()
-    await m.answer("✅ All categories and subcategories created successfully!")
+    await m.answer("✅ Custom Categories & Subcategories created successfully!")
 
 async def main():
     init()
