@@ -180,7 +180,14 @@ async def market(q: CallbackQuery):
     c = con()
     rows = c.execute("SELECT * FROM categories WHERE active=1 AND parent_id IS NULL ORDER BY id").fetchall()
     c.close()
-    buttons = [[(r["name"], f"cat:{r['id']}")] for r in rows] or [[("No categories yet", "noop")]]
+    
+    # প্রতি সারিতে ৪টি করে ক্যাটাগরি বাটন সাজানোর লজিক
+    all_cats = [(r["name"], f"cat:{r['id']}") for r in rows]
+    buttons = [all_cats[i:i + 4] for i in range(0, len(all_cats), 4)]
+    
+    if not buttons:
+        buttons = [[("No categories yet", "noop")]]
+        
     buttons.append([("⬅️ Main Menu", "home")])
     await q.message.edit_text(MARKET_TEXT, reply_markup=K(buttons), parse_mode="Markdown")
     await q.answer()
