@@ -183,7 +183,7 @@ async def m_search(q: CallbackQuery):
     await q.message.edit_text("🔍 **Product Search**\n\nSend keyword or use filters:", reply_markup=K([[("📊 Categories", "market"), ("⬅️ Back", "market")]]))
     await q.answer()
 
-@dp.callback_query(F.data.in__{"m_trend", "m_top", "m_new", "m_deals", "m_sellers"})
+@dp.callback_query(F.data.in_(["m_trend", "m_top", "m_new", "m_deals", "m_sellers"]))
 async def m_filters(q: CallbackQuery):
     c = con()
     if q.data == "m_trend":
@@ -577,4 +577,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
