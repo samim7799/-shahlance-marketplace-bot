@@ -183,8 +183,8 @@ async def market(q: CallbackQuery):
     
     # প্রতি সারিতে ৪টি করে ক্যাটাগরি বাটন সাজানোর লজিক
     all_cats = [(r["name"], f"cat:{r['id']}") for r in rows]
-    buttons = [all_cats[i:i + 4] for i in range(0, len(all_cats), 4)]
-    
+    buttons = [all_cats[i:i + 3] for i in range(0, len(all_cats), 4)]
+
     if not buttons:
         buttons = [[("No categories yet", "noop")]]
         
