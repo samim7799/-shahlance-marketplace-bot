@@ -1,2 +1,2 @@
-aiogram
-python-dotenv
+aiogram>=3.22,<4
+aiohttp>=3.10,<4

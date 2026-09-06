@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: shahlance-wallet-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: BKASH_NUMBER
+        sync: false
+      - key: NAGAD_NUMBER
+        sync: false
+      - key: MIN_WITHDRAW
+        value: "10"
+      - key: DB_PATH
+        value: "/var/data/wallet.db"
+    disk:
+      name: wallet-data
+      mountPath: /var/data
+      sizeGB: 1
