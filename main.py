@@ -15,6 +15,10 @@ from aiogram.types import (
 from dotenv import load_dotenv
 
 
+# ============================================================
+# CONFIG
+# ============================================================
+
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN", "")
@@ -27,42 +31,49 @@ REQUIRED_CHANNEL_URL = "https://t.me/ShahLance"
 
 DB = "marketplace.db"
 
-
 if not TOKEN:
     raise RuntimeError("BOT_TOKEN is missing")
-
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 
+# ============================================================
+# TEXT
+# ============================================================
+
 WELCOME_TEXT = (
     "ShahLance Digital Marketplace \n\n"
-    "A premium and trusted platform for buying and selling digital goods with confidence, security, and Reliable transactions. 🛒 \n\n"
+    "A premium and trusted platform for buying and selling digital goods "
+    "with confidence, security, and Reliable transactions. 🛒 \n\n"
     "Why Choose & Trust Us ? \n\n"
-    "💎Premium Product & Service\n"
-    "🌐20+ Categories  Available \n"
-    "⭐Trusted  Sellers & Quality\n"
-    "🛡️Safe & Reliable Purchase \n"
-    " 🖇️100%  Escrow  Protection \n"
-    "🔒Secure  & Verified  Deals\n"
-    "⚡Instant  & Fast  Delivery\n"
-    "✅Verified  &  Safe  Sellers\n"
-    "🧑🏼‍💻24/7 Live OnlineSupport"
+    "💎 Premium Product & Service\n"
+    "🌐 20+ Categories Available\n"
+    "⭐ Trusted Sellers & Quality\n"
+    "🛡️ Safe & Reliable Purchase\n"
+    "🖇️ 100% Escrow Protection\n"
+    "🔒 Secure & Verified Deals\n"
+    "⚡ Instant & Fast Delivery\n"
+    "✅ Verified & Safe Sellers\n"
+    "🧑🏼‍💻 24/7 Live Online Support"
 )
-
 
 MARKET_TEXT = (
-    "🧑🏼‍💻ShahLance Digital Marketplace 🛒\n\n"
+    "🧑🏼‍💻 ShahLance Digital Marketplace 🛒\n\n"
     "Explore our premium, verified digital products and services below. "
-    "Select your preferred category to view available items and place your order securely.\n\n"
+    "Select your preferred category to view available items and place "
+    "your order securely.\n\n"
     "💎 Why Buy With Us?\n\n"
-    "• Fast & Reliable Delivery: Get your items instantly or within a short processing time.\n\n"
-    "• 100% Secure Escrow: Your funds are fully protected until the order is successfully fulfilled.\n\n"
-    "• Trusted Quality: All listed services and products are strictly verified.\n\n"
-    "👇 Select a category below to browse items :"
+    "• Fast & Reliable Delivery\n\n"
+    "• 100% Secure Escrow\n\n"
+    "• Trusted Quality\n\n"
+    "👇 Select a category below to browse items:"
 )
 
+
+# ============================================================
+# DATABASE
+# ============================================================
 
 def con():
     c = sqlite3.connect(DB, timeout=30)
@@ -269,6 +280,10 @@ def register(u, ref=None):
     c.close()
 
 
+# ============================================================
+# HELPERS
+# ============================================================
+
 def K(rows):
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -287,13 +302,52 @@ def K(rows):
 def main_menu():
     return K(
         [
-            [("👤 My Profile", "profile"), ("🛍️ Marketplace", "market")],
-            [("📦 My Orders", "orders"), ("💰 My Wallet", "wallet")],
-            [("🤝 Become A Seller", "seller"), ("👨‍💻 Admin Support", "support")],
-            [("🎁 Referral Program", "referral"), ("📜 Terms And Rules", "terms")],
+            [
+                ("👤 My Profile", "profile"),
+                ("🛍️ Marketplace", "market"),
+            ],
+            [
+                ("📦 My Orders", "orders"),
+                ("💰 My Wallet", "wallet"),
+            ],
+            [
+                ("🤝 Become A Seller", "seller"),
+                ("👨‍💻 Admin Support", "support"),
+            ],
+            [
+                ("🎁 Referral Program", "referral"),
+                ("📜 Terms And Rules", "terms"),
+            ],
         ]
     )
 
+
+async def safe_edit(
+    message,
+    text,
+    reply_markup=None,
+    parse_mode=None,
+):
+    """
+    Avoids Telegram:
+    'message is not modified'
+    """
+
+    try:
+        await message.edit_text(
+            text,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+        )
+
+    except Exception as e:
+        if "message is not modified" not in str(e).lower():
+            raise
+
+
+# ============================================================
+# CHANNEL / START
+# ============================================================
 
 LANGS = {
     "en": (
@@ -304,7 +358,13 @@ LANGS = {
 
 
 def language_kb():
-    return K([[("🇬🇧 English", "lang:en")]])
+    return K(
+        [
+            [
+                ("🇬🇧 English", "lang:en")
+            ]
+        ]
+    )
 
 
 def join_kb():
@@ -362,10 +422,15 @@ async def start(m: Message):
 
 @dp.callback_query(F.data.startswith("lang:"))
 async def choose_language(q: CallbackQuery):
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         "✅ Language selected!\n\n- ✅ Start Using ✅ -",
         reply_markup=K(
-            [[("🚀 Start Using", "start_using")]]
+            [
+                [
+                    ("🚀 Start Using", "start_using")
+                ]
+            ]
         ),
     )
 
@@ -375,7 +440,8 @@ async def choose_language(q: CallbackQuery):
 @dp.callback_query(F.data == "start_using")
 async def start_using(q: CallbackQuery):
     if not await is_member(q.from_user.id):
-        await q.message.edit_text(
+        await safe_edit(
+            q.message,
             "👋 Hello!\n\n"
             "🔒 You must join our channel below to use this bot:",
             reply_markup=join_kb(),
@@ -386,7 +452,8 @@ async def start_using(q: CallbackQuery):
             show_alert=True,
         )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         WELCOME_TEXT,
         reply_markup=main_menu(),
     )
@@ -402,13 +469,18 @@ async def check_join(q: CallbackQuery):
             show_alert=True,
         )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         WELCOME_TEXT,
         reply_markup=main_menu(),
     )
 
     await q.answer()
 
+
+# ============================================================
+# PROFILE
+# ============================================================
 
 @dp.callback_query(F.data == "profile")
 async def profile(q: CallbackQuery):
@@ -438,7 +510,8 @@ async def profile(q: CallbackQuery):
 
         c.close()
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         f"👤 My Profile\n\n"
         f"🆔 ID: {u['id']}\n"
         f"👤 @{u['username'] or 'N/A'}\n"
@@ -447,8 +520,13 @@ async def profile(q: CallbackQuery):
         f"🏪 Seller status: {u['seller_status']}",
         reply_markup=K(
             [
-                [("💰 My Wallet", "wallet"), ("📦 Orders", "orders")],
-                [("⬅️ Main Menu", "home")],
+                [
+                    ("💰 My Wallet", "wallet"),
+                    ("📦 Orders", "orders"),
+                ],
+                [
+                    ("⬅️ Main Menu", "home")
+                ],
             ]
         ),
     )
@@ -456,10 +534,15 @@ async def profile(q: CallbackQuery):
     await q.answer()
 
 
+# ============================================================
+# MARKETPLACE
+# ============================================================
+
 @dp.callback_query(F.data == "market")
 async def market(q: CallbackQuery):
     if not await is_member(q.from_user.id):
-        await q.message.edit_text(
+        await safe_edit(
+            q.message,
             "🔒 Please join our channel first.",
             reply_markup=join_kb(),
         )
@@ -496,8 +579,15 @@ async def market(q: CallbackQuery):
         ],
     ]
 
+    # IMPORTANT:
+    # Accounts category now opens the new Accounts Marketplace.
     all_cats = [
-        (r["name"], f"cat:{r['id']}")
+        (
+            r["name"],
+            "acc_home"
+            if r["name"].strip().lower() == "accounts"
+            else f"cat:{r['id']}",
+        )
         for r in rows
     ]
 
@@ -509,10 +599,13 @@ async def market(q: CallbackQuery):
     )
 
     buttons.append(
-        [("⬅️ Main Menu", "home")]
+        [
+            ("⬅️ Main Menu", "home")
+        ]
     )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         MARKET_TEXT,
         reply_markup=K(buttons),
     )
@@ -520,16 +613,25 @@ async def market(q: CallbackQuery):
     await q.answer()
 
 
+# ============================================================
+# GENERIC MARKET SEARCH / FILTERS
+# ============================================================
+
 @dp.callback_query(F.data == "m_search")
 async def m_search(q: CallbackQuery):
-    await q.message.edit_text(
-        "🔍 **Product Search**\n\n"
-        "Send keyword or use filters:",
+    await q.message.answer(
+        "🔍 <b>Product Search</b>\n\n"
+        "Use the Accounts Marketplace search for account products, "
+        "or browse categories below.",
         reply_markup=K(
             [
-                [("📊 Categories", "market"), ("⬅️ Back", "market")]
+                [
+                    ("📊 Categories", "market"),
+                    ("⬅️ Back", "market"),
+                ]
             ]
         ),
+        parse_mode="HTML",
     )
 
     await q.answer()
@@ -604,10 +706,15 @@ async def m_filters(q: CallbackQuery):
     else:
         c.close()
 
-        return await q.message.edit_text(
+        return await safe_edit(
+            q.message,
             "🏆 Top Sellers list is based on completed seller orders.",
             reply_markup=K(
-                [[("⬅️ Back", "market")]]
+                [
+                    [
+                        ("⬅️ Back", "market")
+                    ]
+                ]
             ),
         )
 
@@ -625,17 +732,24 @@ async def m_filters(q: CallbackQuery):
     ]
 
     b.append(
-        [("⬅️ Back to Marketplace", "market")]
+        [
+            ("⬅️ Back to Marketplace", "market")
+        ]
     )
 
-    await q.message.edit_text(
-        f"📂 **{title}**",
+    await safe_edit(
+        q.message,
+        f"📂 <b>{title}</b>",
         reply_markup=K(b),
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
     await q.answer()
 
+
+# ============================================================
+# GENERIC CATEGORY
+# ============================================================
 
 @dp.callback_query(F.data.startswith("cat:"))
 async def cat(q: CallbackQuery):
@@ -674,7 +788,9 @@ async def cat(q: CallbackQuery):
     c.close()
 
     b = [
-        [(s["name"], f"cat:{s['id']}")]
+        [
+            (s["name"], f"cat:{s['id']}")
+        ]
         for s in subs
     ]
 
@@ -690,22 +806,33 @@ async def cat(q: CallbackQuery):
     ]
 
     b.append(
-        [("⬅️ Back", "market")]
+        [
+            ("⬅️ Back", "market")
+        ]
     )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         "📂 Select subcategory or product:",
         reply_markup=K(
             b
             or [
-                [("No products available", "noop")],
-                [("⬅️ Back", "market")],
+                [
+                    ("No products available", "noop")
+                ],
+                [
+                    ("⬅️ Back", "market")
+                ],
             ]
         ),
     )
 
     await q.answer()
 
+
+# ============================================================
+# GENERIC PRODUCT
+# ============================================================
 
 @dp.callback_query(F.data.startswith("prod:"))
 async def prod(q: CallbackQuery):
@@ -765,17 +892,18 @@ async def prod(q: CallbackQuery):
     )
 
     text = (
-        f"🤖 **{p['name']}**\n"
-        f"💰 **Price:** {p['price']} {CURRENCY}\n"
-        f"⭐ **Rating:** {p['rating']} / 5.0 "
+        f"🤖 <b>{p['name']}</b>\n"
+        f"💰 <b>Price:</b> {p['price']} {CURRENCY}\n"
+        f"⭐ <b>Rating:</b> {p['rating']} / 5.0 "
         f"({p['reviews_count']} Reviews)\n"
-        f"🛒 **Sold:** {p['sold_count']} Units\n"
-        f"👤 **Seller:** [{s_name}]({seller_link})\n"
-        f"📍 **Location:** Global\n"
-        f"🟢 **Status:** Online\n"
-        f"🛡️ **Escrow Protected:** 100% Safe\n\n"
-        f"📝 **Description:**\n{desc}\n\n"
-        f"📦 **Stock Available:** {p['stock']}"
+        f"🛒 <b>Sold:</b> {p['sold_count']} Units\n"
+        f"👤 <b>Seller:</b> "
+        f'<a href="{seller_link}">{s_name}</a>\n'
+        f"📍 <b>Location:</b> Global\n"
+        f"🟢 <b>Status:</b> Online\n"
+        f"🛡️ <b>Escrow Protected:</b> 100% Safe\n\n"
+        f"📝 <b>Description:</b>\n{desc}\n\n"
+        f"📦 <b>Stock Available:</b> {p['stock']}"
     )
 
     markup = K(
@@ -799,14 +927,19 @@ async def prod(q: CallbackQuery):
         ]
     )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         text,
         reply_markup=markup,
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
     await q.answer()
 
+
+# ============================================================
+# GENERIC BUY
+# ============================================================
 
 @dp.callback_query(F.data.startswith("buy:"))
 async def buy(q: CallbackQuery):
@@ -858,6 +991,13 @@ async def buy(q: CallbackQuery):
             c.rollback()
             return await q.answer(
                 "Out of stock",
+                show_alert=True,
+            )
+
+        if p["seller_id"] == u["id"]:
+            c.rollback()
+            return await q.answer(
+                "You cannot buy your own product.",
                 show_alert=True,
             )
 
@@ -952,7 +1092,7 @@ async def buy(q: CallbackQuery):
             (
                 u["id"],
                 "purchase",
-                str(price),
+                str(-price),
                 "completed",
                 f"Order #{oid}",
                 now(),
@@ -968,8 +1108,9 @@ async def buy(q: CallbackQuery):
     finally:
         c.close()
 
-    await q.message.edit_text(
-        f"✅ **Order Created & Protected by Escrow!**\n\n"
+    await safe_edit(
+        q.message,
+        f"✅ <b>Order Created & Protected by Escrow!</b>\n\n"
         f"📌 Order ID: #{oid}\n"
         f"🛍 Product: {p['name']}\n"
         f"💵 Amount: {price} {CURRENCY}\n"
@@ -989,10 +1130,15 @@ async def buy(q: CallbackQuery):
                 ],
             ]
         ),
+        parse_mode="HTML",
     )
 
     await q.answer()
 
+
+# ============================================================
+# GENERIC CONFIRM ORDER
+# ============================================================
 
 @dp.callback_query(F.data.startswith("confirm_order:"))
 async def confirm_order(q: CallbackQuery):
@@ -1076,6 +1222,28 @@ async def confirm_order(q: CallbackQuery):
             ),
         )
 
+        c.execute(
+            """
+            INSERT INTO transactions(
+                user_id,
+                kind,
+                amount,
+                status,
+                note,
+                created_at
+            )
+            VALUES(?,?,?,?,?,?)
+            """,
+            (
+                seller_id,
+                "seller_payout",
+                str(seller_payout),
+                "completed",
+                f"Order #{oid} payout",
+                now(),
+            ),
+        )
+
         c.commit()
 
     except Exception:
@@ -1085,8 +1253,9 @@ async def confirm_order(q: CallbackQuery):
     finally:
         c.close()
 
-    await q.message.edit_text(
-        f"🎉 **Order Completed Successfully!**\n\n"
+    await safe_edit(
+        q.message,
+        f"🎉 <b>Order Completed Successfully!</b>\n\n"
         f"Order #{oid} confirmed. Funds released to seller.\n"
         f"Please leave a review for this product!",
         reply_markup=K(
@@ -1103,10 +1272,15 @@ async def confirm_order(q: CallbackQuery):
                 ]
             ]
         ),
+        parse_mode="HTML",
     )
 
     await q.answer()
 
+
+# ============================================================
+# REVIEW
+# ============================================================
 
 @dp.callback_query(F.data.startswith("review:"))
 async def review_prompt(q: CallbackQuery):
@@ -1120,12 +1294,18 @@ async def review_prompt(q: CallbackQuery):
             show_alert=True,
         )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         "⭐ Please send your review score and comment as:\n"
         "`/rate PRODUCT_ID 5 Great service!`",
         reply_markup=K(
-            [[("⬅️ Marketplace", "market")]]
+            [
+                [
+                    ("⬅️ Marketplace", "market")
+                ]
+            ]
         ),
+        parse_mode="Markdown",
     )
 
     await q.answer()
@@ -1275,6 +1455,10 @@ async def rate_product(m: Message):
     )
 
 
+# ============================================================
+# ORDERS
+# ============================================================
+
 @dp.callback_query(F.data == "orders")
 async def orders(q: CallbackQuery):
     c = con()
@@ -1299,13 +1483,13 @@ async def orders(q: CallbackQuery):
     c.close()
 
     text = (
-        "📦 **My Orders**\n\n"
+        "📦 <b>My Orders</b>\n\n"
         +
         (
             "\n".join(
                 f"#{r['id']} • {r['name']} • "
                 f"{r['amount']} {CURRENCY} • "
-                f"**{r['status']}**"
+                f"<b>{r['status']}</b>"
                 for r in rs
             )
             if rs
@@ -1313,18 +1497,28 @@ async def orders(q: CallbackQuery):
         )
     )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         text,
         reply_markup=K(
             [
-                [("🛍️ Marketplace", "market")],
-                [("⬅️ Main Menu", "home")],
+                [
+                    ("🛍️ Marketplace", "market")
+                ],
+                [
+                    ("⬅️ Main Menu", "home")
+                ],
             ]
         ),
+        parse_mode="HTML",
     )
 
     await q.answer()
 
+
+# ============================================================
+# WALLET
+# ============================================================
 
 @dp.callback_query(F.data == "wallet")
 async def wallet(q: CallbackQuery):
@@ -1339,19 +1533,24 @@ async def wallet(q: CallbackQuery):
 
     if not u:
         register(q.from_user)
-
         balance = "0"
     else:
         balance = u["balance"]
 
-    await q.message.edit_text(
-        f"💰 **My Wallet**\n\n"
+    await safe_edit(
+        q.message,
+        f"💰 <b>My Wallet</b>\n\n"
         f"Balance: {balance} {CURRENCY}\n\n"
         f"➕ Deposit: /deposit AMOUNT\n"
         f"💸 Withdraw: /withdraw AMOUNT DETAILS",
         reply_markup=K(
-            [[("⬅️ Main Menu", "home")]]
+            [
+                [
+                    ("⬅️ Main Menu", "home")
+                ]
+            ]
         ),
+        parse_mode="HTML",
     )
 
     await q.answer()
@@ -1508,8 +1707,6 @@ async def withdraw(m: Message):
 
         if not u:
             c.rollback()
-            c.close()
-
             return await m.answer(
                 "User not registered."
             )
@@ -1518,8 +1715,6 @@ async def withdraw(m: Message):
 
         if balance < a:
             c.rollback()
-            c.close()
-
             return await m.answer(
                 "Insufficient balance"
             )
@@ -1587,6 +1782,10 @@ async def withdraw(m: Message):
         )
 
 
+# ============================================================
+# SELLER
+# ============================================================
+
 @dp.callback_query(F.data == "seller")
 async def seller(q: CallbackQuery):
     c = con()
@@ -1609,9 +1808,10 @@ async def seller(q: CallbackQuery):
         seller_status = u["seller_status"]
 
     if seller_status == "approved":
-        await q.message.edit_text(
-            "🤝 **Seller Center**\n\n"
-            "Add products using "
+        await safe_edit(
+            q.message,
+            "🤝 <b>Seller Center</b>\n\n"
+            "Add products using:\n"
             "`/addproduct CATEGORY_ID PRICE STOCK NAME | DESCRIPTION`",
             reply_markup=K(
                 [
@@ -1619,19 +1819,28 @@ async def seller(q: CallbackQuery):
                         ("📦 My Products", "seller_products"),
                         ("📊 Sales", "seller_sales"),
                     ],
-                    [("⬅️ Main Menu", "home")],
+                    [
+                        ("⬅️ Main Menu", "home")
+                    ],
                 ]
             ),
+            parse_mode="HTML",
         )
 
     else:
-        await q.message.edit_text(
-            "🤝 **Become A Seller**\n\n"
-            "Apply with "
+        await safe_edit(
+            q.message,
+            "🤝 <b>Become A Seller</b>\n\n"
+            "Apply with:\n"
             "`/seller_apply Your experience & what you sell`",
             reply_markup=K(
-                [[("⬅️ Main Menu", "home")]]
+                [
+                    [
+                        ("⬅️ Main Menu", "home")
+                    ]
+                ]
             ),
+            parse_mode="HTML",
         )
 
     await q.answer()
@@ -1829,6 +2038,10 @@ async def addproduct(m: Message):
     )
 
 
+# ============================================================
+# REFERRAL
+# ============================================================
+
 @dp.callback_query(F.data == "referral")
 async def referral(q: CallbackQuery):
     register(q.from_user)
@@ -1855,10 +2068,7 @@ async def referral(q: CallbackQuery):
 
     c.close()
 
-    if not u:
-        earned = "0"
-    else:
-        earned = u["referral_earned"]
+    earned = u["referral_earned"] if u else "0"
 
     me = await bot.get_me()
 
@@ -1867,37 +2077,51 @@ async def referral(q: CallbackQuery):
         f"?start=ref_{q.from_user.id}"
     )
 
-    await q.message.edit_text(
-        f"🎁 **Referral Program**\n\n"
+    await safe_edit(
+        q.message,
+        f"🎁 <b>Referral Program</b>\n\n"
         f"👥 Referrals: {n}\n"
         f"💰 Earned: {earned} {CURRENCY}\n\n"
-        f"🔗 `{link}`",
+        f"🔗 <code>{link}</code>",
         reply_markup=K(
-            [[("⬅️ Main Menu", "home")]]
+            [
+                [
+                    ("⬅️ Main Menu", "home")
+                ]
+            ]
         ),
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
     await q.answer()
 
 
+# ============================================================
+# SUPPORT / TERMS / HOME
+# ============================================================
+
 @dp.callback_query(F.data == "support")
 async def support(q: CallbackQuery):
     markup = K(
-        [[("⬅️ Main Menu", "home")]]
+        [
+            [
+                ("⬅️ Main Menu", "home")
+            ]
+        ]
     )
 
     text = (
-        f"👨‍💻 **Admin Support**\n\n"
+        f"👨‍💻 <b>Admin Support</b>\n\n"
         f"Contact @{SUPPORT}"
         if SUPPORT
         else "Support not configured."
     )
 
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         text,
         reply_markup=markup,
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
     await q.answer()
@@ -1905,14 +2129,23 @@ async def support(q: CallbackQuery):
 
 @dp.callback_query(F.data == "terms")
 async def terms(q: CallbackQuery):
-    await q.message.edit_text(
-        "📜 **Terms And Rules**\n\n"
-        "Only lawful and platform-compliant products/services are allowed. "
+    await safe_edit(
+        q.message,
+        "📜 <b>Terms And Rules</b>\n\n"
+        "Only lawful and platform-compliant products/services are allowed.\n\n"
+        "Accounts listed in the Accounts Marketplace must be legally "
+        "owned/authorized by the seller. Passwords, cookies, session "
+        "tokens, authentication secrets and phishing material are not "
+        "permitted.\n\n"
         "Escrow holds funds until delivery confirmation.",
         reply_markup=K(
-            [[("⬅️ Main Menu", "home")]]
+            [
+                [
+                    ("⬅️ Main Menu", "home")
+                ]
+            ]
         ),
-        parse_mode="Markdown",
+        parse_mode="HTML",
     )
 
     await q.answer()
@@ -1920,7 +2153,8 @@ async def terms(q: CallbackQuery):
 
 @dp.callback_query(F.data == "home")
 async def home(q: CallbackQuery):
-    await q.message.edit_text(
+    await safe_edit(
+        q.message,
         WELCOME_TEXT,
         reply_markup=main_menu(),
     )
@@ -1932,6 +2166,10 @@ async def home(q: CallbackQuery):
 async def noop(q: CallbackQuery):
     await q.answer()
 
+
+# ============================================================
+# ADMIN DEPOSIT
+# ============================================================
 
 @dp.message(Command("approve_deposit"))
 async def ad(m: Message):
@@ -2018,6 +2256,10 @@ async def ad(m: Message):
     )
 
 
+# ============================================================
+# ADMIN SELLER
+# ============================================================
+
 @dp.message(Command("approve_seller"))
 async def aseller(m: Message):
     if m.from_user.id != ADMIN_ID:
@@ -2086,59 +2328,39 @@ async def aseller(m: Message):
     )
 
 
-@dp.message(Command("reset_cats"))
-async def reset_cats(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
+# ============================================================
+# CATEGORY SEED
+# ============================================================
 
+MAIN_CATEGORIES = [
+    "Accounts",
+    "Crypto",
+    "Flash Crypto",
+    "Fiat Exchange",
+    "Gift Cards",
+    "Payment Card",
+    "Pay Gateway",
+    "Sms OTP",
+    "SmmServer",
+    "Subscription",
+    "Vpn/Proxy",
+    "Virtual Sim",
+    "Esim",
+    "Kyc",
+    "D-Marketing",
+    "Software",
+    "SSN Document",
+    "Hacking",
+    "Gaming",
+    "Course",
+    "Custom Support",
+]
+
+
+def seed_categories():
     c = con()
 
-    c.execute(
-        "DROP TABLE IF EXISTS categories"
-    )
-
-    c.commit()
-    c.close()
-
-    init()
-
-    await m.answer(
-        "✅ Categories reset! Now type /seed"
-    )
-
-
-@dp.message(Command("seed"))
-async def seed(m: Message):
-    if m.from_user.id != ADMIN_ID:
-        return
-
-    c = con()
-
-    main_cats = [
-        "Accounts",
-        "Crypto",
-        "Flash Crypto",
-        "Fiat Exchange",
-        "Gift Cards",
-        "Payment Card",
-        "Pay Gateway",
-        "Sms OTP",
-        "SmmServer",
-        "Subscription",
-        "Vpn/Proxy",
-        "Virtual Sim",
-        "Esim",
-        "Kyc",
-        "D-Marketing",
-        "Software",
-        "SSN Document",
-        "Hacking",
-        "Gaming",
-        "Course",
-        "Custom Support",
-    ]
-
-    for cat_name in main_cats:
+    for cat_name in MAIN_CATEGORIES:
         c.execute(
             """
             INSERT INTO categories(
@@ -2224,15 +2446,44 @@ async def seed(m: Message):
     c.commit()
     c.close()
 
+
+@dp.message(Command("reset_cats"))
+async def reset_cats(m: Message):
+    if m.from_user.id != ADMIN_ID:
+        return
+
+    c = con()
+
+    c.execute(
+        "DROP TABLE IF EXISTS categories"
+    )
+
+    c.commit()
+    c.close()
+
+    init()
+    seed_categories()
+
+    await m.answer(
+        "✅ Categories reset and recreated successfully!"
+    )
+
+
+@dp.message(Command("seed"))
+async def seed(m: Message):
+    if m.from_user.id != ADMIN_ID:
+        return
+
+    seed_categories()
+
     await m.answer(
         "✅ Custom Categories & Subcategories "
         "created successfully!"
     )
 
+
 # ============================================================
-# ACCOUNTS MARKETPLACE MODULE
-# Safe authorized-account marketplace
-# Does NOT store passwords, cookies, session tokens or phishing data
+# ACCOUNTS MARKETPLACE
 # ============================================================
 
 ACCOUNT_CATEGORIES = [
@@ -2254,108 +2505,116 @@ ACCOUNT_CATEGORIES = [
 def account_db():
     db = con()
 
-    db.executescript("""
-    CREATE TABLE IF NOT EXISTS account_categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        slug TEXT UNIQUE NOT NULL,
-        active INTEGER DEFAULT 1
-    );
+    db.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            slug TEXT UNIQUE NOT NULL,
+            active INTEGER DEFAULT 1
+        );
 
-    CREATE TABLE IF NOT EXISTS account_sellers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER UNIQUE NOT NULL,
-        seller_code TEXT UNIQUE NOT NULL,
-        nickname TEXT NOT NULL,
-        verified INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'pending',
-        total_sales INTEGER DEFAULT 0,
-        active_listings INTEGER DEFAULT 0,
-        rating REAL DEFAULT 0,
-        reviews_count INTEGER DEFAULT 0,
-        replacement_policy TEXT DEFAULT 'none',
-        joined_at TEXT NOT NULL,
-        response_rate REAL DEFAULT 0
-    );
+        CREATE TABLE IF NOT EXISTS account_sellers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            seller_code TEXT UNIQUE NOT NULL,
+            nickname TEXT NOT NULL,
+            verified INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            total_sales INTEGER DEFAULT 0,
+            active_listings INTEGER DEFAULT 0,
+            rating REAL DEFAULT 0,
+            reviews_count INTEGER DEFAULT 0,
+            replacement_policy TEXT DEFAULT 'none',
+            joined_at TEXT NOT NULL,
+            response_rate REAL DEFAULT 0
+        );
 
-    CREATE TABLE IF NOT EXISTS account_products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        seller_id INTEGER NOT NULL,
-        category_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT DEFAULT '',
-        price TEXT NOT NULL,
-        quantity INTEGER DEFAULT 1,
-        quality TEXT DEFAULT 'Standard',
-        age_type TEXT DEFAULT 'Fresh',
-        registration_method TEXT DEFAULT 'Manual',
-        replacement_period INTEGER DEFAULT 0,
-        delivery_method TEXT DEFAULT 'Manual',
-        metadata TEXT DEFAULT '',
-        rules TEXT DEFAULT '',
-        stock INTEGER DEFAULT 1,
-        rating REAL DEFAULT 0,
-        reviews_count INTEGER DEFAULT 0,
-        active INTEGER DEFAULT 1,
-        created_at TEXT NOT NULL
-    );
+        CREATE TABLE IF NOT EXISTS account_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_id INTEGER NOT NULL,
+            category_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            price TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            quality TEXT DEFAULT 'Standard',
+            age_type TEXT DEFAULT 'Fresh',
+            registration_method TEXT DEFAULT 'Manual',
+            replacement_period INTEGER DEFAULT 0,
+            delivery_method TEXT DEFAULT 'Manual',
+            metadata TEXT DEFAULT '',
+            rules TEXT DEFAULT '',
+            stock INTEGER DEFAULT 1,
+            rating REAL DEFAULT 0,
+            reviews_count INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL
+        );
 
-    CREATE TABLE IF NOT EXISTS account_orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        buyer_id INTEGER NOT NULL,
-        product_id INTEGER NOT NULL,
-        seller_id INTEGER NOT NULL,
-        quantity INTEGER NOT NULL,
-        amount TEXT NOT NULL,
-        status TEXT DEFAULT 'escrow_pending',
-        delivery TEXT DEFAULT '',
-        buyer_confirmed INTEGER DEFAULT 0,
-        seller_paid INTEGER DEFAULT 0,
-        created_at TEXT NOT NULL,
-        confirmed_at TEXT
-    );
+        CREATE TABLE IF NOT EXISTS account_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            buyer_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            seller_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            amount TEXT NOT NULL,
+            status TEXT DEFAULT 'escrow_pending',
+            delivery TEXT DEFAULT '',
+            buyer_confirmed INTEGER DEFAULT 0,
+            seller_paid INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            confirmed_at TEXT
+        );
 
-    CREATE TABLE IF NOT EXISTS account_reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER UNIQUE NOT NULL,
-        product_id INTEGER NOT NULL,
-        seller_id INTEGER NOT NULL,
-        buyer_id INTEGER NOT NULL,
-        rating INTEGER NOT NULL,
-        review TEXT DEFAULT '',
-        created_at TEXT NOT NULL
-    );
+        CREATE TABLE IF NOT EXISTS account_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER UNIQUE NOT NULL,
+            product_id INTEGER NOT NULL,
+            seller_id INTEGER NOT NULL,
+            buyer_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL,
+            review TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
 
-    CREATE TABLE IF NOT EXISTS account_replacements (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER NOT NULL,
-        buyer_id INTEGER NOT NULL,
-        seller_id INTEGER NOT NULL,
-        reason TEXT DEFAULT '',
-        status TEXT DEFAULT 'pending',
-        admin_note TEXT DEFAULT '',
-        created_at TEXT NOT NULL,
-        resolved_at TEXT
-    );
+        CREATE TABLE IF NOT EXISTS account_replacements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER NOT NULL,
+            buyer_id INTEGER NOT NULL,
+            seller_id INTEGER NOT NULL,
+            reason TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            admin_note TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            resolved_at TEXT
+        );
 
-    CREATE TABLE IF NOT EXISTS account_audit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        admin_id INTEGER,
-        action TEXT NOT NULL,
-        target_type TEXT DEFAULT '',
-        target_id INTEGER,
-        details TEXT DEFAULT '',
-        created_at TEXT NOT NULL
-    );
-    """)
+        CREATE TABLE IF NOT EXISTS account_audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER,
+            action TEXT NOT NULL,
+            target_type TEXT DEFAULT '',
+            target_id INTEGER,
+            details TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        """
+    )
 
     for name, slug in ACCOUNT_CATEGORIES:
         db.execute(
             """
-            INSERT OR IGNORE INTO account_categories(name, slug)
+            INSERT OR IGNORE INTO account_categories(
+                name,
+                slug
+            )
             VALUES (?, ?)
             """,
-            (name, slug)
+            (
+                name,
+                slug,
+            ),
         )
 
     db.commit()
@@ -2370,48 +2629,68 @@ def account_keyboard(rows, back="market"):
 
         for item in rows[i:i + 3]:
             text, callback = item
+
             line.append(
                 InlineKeyboardButton(
                     text=text,
-                    callback_data=callback
+                    callback_data=callback,
                 )
             )
 
         kb.append(line)
 
     if back:
-        kb.append([
-            InlineKeyboardButton(
-                text="⬅️ Back",
-                callback_data=back
-            )
-        ])
+        kb.append(
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Back",
+                    callback_data=back,
+                )
+            ]
+        )
 
-    return InlineKeyboardMarkup(inline_keyboard=kb)
+    return InlineKeyboardMarkup(
+        inline_keyboard=kb
+    )
 
 
 def account_seller_get(user_id):
     db = con()
+
     row = db.execute(
-        "SELECT * FROM account_sellers WHERE user_id=?",
-        (user_id,)
+        """
+        SELECT *
+        FROM account_sellers
+        WHERE user_id=?
+        """,
+        (user_id,),
     ).fetchone()
+
     db.close()
+
     return row
 
 
 def account_seller_by_id(seller_id):
     db = con()
+
     row = db.execute(
-        "SELECT * FROM account_sellers WHERE id=?",
-        (seller_id,)
+        """
+        SELECT *
+        FROM account_sellers
+        WHERE id=?
+        """,
+        (seller_id,),
     ).fetchone()
+
     db.close()
+
     return row
 
 
 def account_product(product_id):
     db = con()
+
     row = db.execute(
         """
         SELECT
@@ -2423,19 +2702,25 @@ def account_product(product_id):
             s.rating AS seller_rating,
             s.reviews_count AS seller_reviews
         FROM account_products p
-        JOIN account_categories c ON c.id=p.category_id
-        JOIN account_sellers s ON s.id=p.seller_id
-        WHERE p.id=? AND p.active=1
+        JOIN account_categories c
+            ON c.id=p.category_id
+        JOIN account_sellers s
+            ON s.id=p.seller_id
+        WHERE p.id=?
+          AND p.active=1
+          AND s.status='approved'
         """,
-        (product_id,)
+        (product_id,),
     ).fetchone()
+
     db.close()
+
     return row
 
 
-# ------------------------------------------------------------
+# ============================================================
 # ACCOUNTS HOME
-# ------------------------------------------------------------
+# ============================================================
 
 @dp.callback_query(F.data == "acc_home")
 async def accounts_home(call: CallbackQuery):
@@ -2444,158 +2729,134 @@ async def accounts_home(call: CallbackQuery):
         "🏪 <b>Accounts Marketplace</b>\n\n"
         "Choose a category or browse products.\n\n"
         "🔎 Search by product ID, seller ID or keyword.\n"
-        "📦 Thousands of products supported.\n"
         "⭐ Seller ratings and reviews available.\n"
-        "🛡 Buyer protection through escrow."
+        "🛡 Buyer protection through escrow.\n\n"
+        "⚠️ Only lawful and authorized account products are allowed."
     )
 
     buttons = [
         [
             InlineKeyboardButton(
                 text="🔎 Search",
-                callback_data="acc_search"
+                callback_data="acc_search",
             ),
             InlineKeyboardButton(
                 text="🔥 Popular",
-                callback_data="acc_popular"
-            )
+                callback_data="acc_popular",
+            ),
         ],
         [
             InlineKeyboardButton(
                 text="🆕 New",
-                callback_data="acc_new"
+                callback_data="acc_new",
             ),
             InlineKeyboardButton(
                 text="⭐ Top Sellers",
-                callback_data="acc_top_sellers"
-            )
-        ]
+                callback_data="acc_top_sellers",
+            ),
+        ],
     ]
 
-    cats = [
-        (
-            name,
-            f"acc_cat:{i + 1}"
-        )
-        for i, (name, slug) in enumerate(ACCOUNT_CATEGORIES)
-    ]
-
-    for i in range(0, len(cats), 3):
-        buttons.append([
-            InlineKeyboardButton(
-                text=x[0],
-                callback_data=x[1]
-            )
-            for x in cats[i:i + 3]
-        ])
-
-    buttons.append([
-        InlineKeyboardButton(
-            text="👤 Seller Center",
-            callback_data="acc_seller"
-        )
-    ])
-
-    await call.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=buttons
-        )
-    )
-    await call.answer()
-
-
-# ------------------------------------------------------------
-# CATEGORY
-# ------------------------------------------------------------
-
-@dp.callback_query(F.data.startswith("acc_cat:"))
-async def account_category(call: CallbackQuery):
-
-    cid = int(call.data.split(":")[1])
-
+    # FIX:
+    # Read actual IDs from database instead of assuming 1-12.
     db = con()
 
-    cat = db.execute(
-        "SELECT * FROM account_categories WHERE id=?",
-        (cid,)
-    ).fetchone()
-
-    rows = db.execute(
+    cat_rows = db.execute(
         """
-        SELECT p.id, p.title, p.price, p.stock,
-               p.quality, s.nickname
-        FROM account_products p
-        JOIN account_sellers s ON s.id=p.seller_id
-        WHERE p.category_id=?
-          AND p.active=1
-          AND p.stock>0
-          AND s.status='approved'
-        ORDER BY p.created_at DESC
-        LIMIT 10
-        """,
-        (cid,)
+        SELECT id, name
+        FROM account_categories
+        WHERE active=1
+        ORDER BY id
+        """
     ).fetchall()
 
     db.close()
 
-    if not cat:
-        await call.answer("Category not found.", show_alert=True)
-        return
-
-    text = f"📂 <b>{cat['name']}</b>\n\n"
-
-    if not rows:
-        text += "No products available."
-
-    buttons = []
-
-    for r in rows:
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"#{r['id']} • {r['title'][:25]} • {r['price']} {CURRENCY}",
-                callback_data=f"acc_product:{r['id']}"
-            )
-        ])
-
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
+    cats = [
+        (
+            row["name"],
+            f"acc_cat:{row['id']}",
         )
-    ])
+        for row in cat_rows
+    ]
 
-    await call.message.edit_text(
+    for i in range(0, len(cats), 3):
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=x[0],
+                    callback_data=x[1],
+                )
+                for x in cats[i:i + 3]
+            ]
+        )
+
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="👤 Seller Center",
+                callback_data="acc_seller",
+            )
+        ]
+    )
+
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="📦 My Account Orders",
+                callback_data="acc_orders",
+            )
+        ]
+    )
+
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# PAGINATION
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT CATEGORY
+# ============================================================
 
-@dp.callback_query(F.data.startswith("acc_page:"))
-async def account_page(call: CallbackQuery):
-
-    _, cid, page = call.data.split(":")
-    cid = int(cid)
-    page = int(page)
-
+async def render_account_category(
+    call: CallbackQuery,
+    cid: int,
+    page: int = 0,
+):
     per_page = 10
     offset = page * per_page
 
     db = con()
 
+    cat = db.execute(
+        """
+        SELECT *
+        FROM account_categories
+        WHERE id=?
+        AND active=1
+        """,
+        (cid,),
+    ).fetchone()
+
     rows = db.execute(
         """
-        SELECT p.id, p.title, p.price, p.stock
+        SELECT
+            p.id,
+            p.title,
+            p.price,
+            p.stock,
+            p.quality,
+            s.nickname
         FROM account_products p
-        JOIN account_sellers s ON s.id=p.seller_id
+        JOIN account_sellers s
+            ON s.id=p.seller_id
         WHERE p.category_id=?
           AND p.active=1
           AND p.stock>0
@@ -2603,23 +2864,48 @@ async def account_page(call: CallbackQuery):
         ORDER BY p.created_at DESC
         LIMIT ? OFFSET ?
         """,
-        (cid, per_page + 1, offset)
+        (
+            cid,
+            per_page + 1,
+            offset,
+        ),
     ).fetchall()
 
     db.close()
 
+    if not cat:
+        await call.answer(
+            "Category not found.",
+            show_alert=True,
+        )
+        return
+
     has_next = len(rows) > per_page
     rows = rows[:per_page]
+
+    text = (
+        f"📂 <b>{cat['name']}</b>\n"
+        f"Page: {page + 1}\n\n"
+    )
+
+    if not rows:
+        text += "No products available."
 
     buttons = []
 
     for r in rows:
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"#{r['id']} • {r['title'][:28]} • {r['price']} {CURRENCY}",
-                callback_data=f"acc_product:{r['id']}"
-            )
-        ])
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=(
+                        f"#{r['id']} • "
+                        f"{r['title'][:25]} • "
+                        f"{r['price']} {CURRENCY}"
+                    ),
+                    callback_data=f"acc_product:{r['id']}",
+                )
+            ]
+        )
 
     nav = []
 
@@ -2627,7 +2913,7 @@ async def account_page(call: CallbackQuery):
         nav.append(
             InlineKeyboardButton(
                 text="⬅️",
-                callback_data=f"acc_page:{cid}:{page-1}"
+                callback_data=f"acc_page:{cid}:{page - 1}",
             )
         )
 
@@ -2635,44 +2921,108 @@ async def account_page(call: CallbackQuery):
         nav.append(
             InlineKeyboardButton(
                 text="➡️",
-                callback_data=f"acc_page:{cid}:{page+1}"
+                callback_data=f"acc_page:{cid}:{page + 1}",
             )
         )
 
     if nav:
         buttons.append(nav)
 
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
-        )
-    ])
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Accounts",
+                callback_data="acc_home",
+            )
+        ]
+    )
 
-    await call.message.edit_text(
-        f"📦 <b>Products</b>\nPage: {page + 1}",
+    await safe_edit(
+        call.message,
+        text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
+        ),
+        parse_mode="HTML",
+    )
+
+
+@dp.callback_query(F.data.startswith("acc_cat:"))
+async def account_category(call: CallbackQuery):
+
+    try:
+        cid = int(
+            call.data.split(":", 1)[1]
         )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid category.",
+            show_alert=True,
+        )
+
+    await render_account_category(
+        call,
+        cid,
+        0,
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# PRODUCT DETAILS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT PAGINATION
+# ============================================================
+
+@dp.callback_query(F.data.startswith("acc_page:"))
+async def account_page(call: CallbackQuery):
+
+    try:
+        _, cid, page = call.data.split(":")
+
+        cid = int(cid)
+        page = int(page)
+
+        if page < 0:
+            raise ValueError
+
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid page.",
+            show_alert=True,
+        )
+
+    await render_account_category(
+        call,
+        cid,
+        page,
+    )
+
+    await call.answer()
+
+
+# ============================================================
+# ACCOUNT PRODUCT DETAILS
+# ============================================================
 
 @dp.callback_query(F.data.startswith("acc_product:"))
 async def account_product_details(call: CallbackQuery):
 
-    pid = int(call.data.split(":")[1])
+    try:
+        pid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid product.",
+            show_alert=True,
+        )
+
     p = account_product(pid)
 
     if not p:
         await call.answer(
             "Product unavailable.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
@@ -2698,64 +3048,89 @@ async def account_product_details(call: CallbackQuery):
     )
 
     if p["metadata"]:
-        text += f"\n\nℹ️ <b>Metadata</b>\n{p['metadata']}"
+        text += (
+            f"\n\nℹ️ <b>Metadata</b>\n"
+            f"{p['metadata']}"
+        )
 
     if p["rules"]:
-        text += f"\n\n📜 <b>Rules</b>\n{p['rules']}"
+        text += (
+            f"\n\n📜 <b>Rules</b>\n"
+            f"{p['rules']}"
+        )
 
     buttons = [
         [
             InlineKeyboardButton(
                 text="👤 Seller Info",
-                callback_data=f"acc_seller_profile:{p['seller_id']}"
+                callback_data=(
+                    f"acc_seller_profile:{p['seller_id']}"
+                ),
             ),
             InlineKeyboardButton(
                 text="⭐ Reviews",
-                callback_data=f"acc_reviews:{p['seller_id']}"
-            )
+                callback_data=(
+                    f"acc_reviews:{p['seller_id']}"
+                ),
+            ),
         ],
         [
             InlineKeyboardButton(
                 text="🛒 Buy",
-                callback_data=f"acc_buy:{p['id']}"
+                callback_data=f"acc_buy:{p['id']}",
             )
         ],
         [
             InlineKeyboardButton(
                 text="⬅️ Back",
-                callback_data=f"acc_cat:{p['category_id']}"
+                callback_data=f"acc_cat:{p['category_id']}",
             )
-        ]
+        ],
     ]
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# SELLER PROFILE
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT SELLER PROFILE
+# ============================================================
 
 @dp.callback_query(F.data.startswith("acc_seller_profile:"))
 async def account_seller_profile(call: CallbackQuery):
 
-    sid = int(call.data.split(":")[1])
+    try:
+        sid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid seller.",
+            show_alert=True,
+        )
+
     s = account_seller_by_id(sid)
 
     if not s:
         await call.answer(
             "Seller not found.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
-    verified = "🟢 Verified" if s["verified"] else "⚪ Standard"
+    verified = (
+        "🟢 Verified"
+        if s["verified"]
+        else "⚪ Standard"
+    )
 
     text = (
         f"👤 <b>{s['nickname']}</b>\n\n"
@@ -2771,37 +3146,47 @@ async def account_seller_profile(call: CallbackQuery):
         "🔒 Seller personal contact information is hidden."
     )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text="⭐ Reviews",
-                        callback_data=f"acc_reviews:{sid}"
+                        callback_data=f"acc_reviews:{sid}",
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         text="⬅️ Back",
-                        callback_data="acc_home"
+                        callback_data="acc_home",
                     )
-                ]
+                ],
             ]
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# SELLER REVIEWS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT REVIEWS
+# ============================================================
 
 @dp.callback_query(F.data.startswith("acc_reviews:"))
 async def account_reviews(call: CallbackQuery):
 
-    sid = int(call.data.split(":")[1])
+    try:
+        sid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid seller.",
+            show_alert=True,
+        )
 
     db = con()
 
@@ -2813,7 +3198,7 @@ async def account_reviews(call: CallbackQuery):
         ORDER BY created_at DESC
         LIMIT 10
         """,
-        (sid,)
+        (sid,),
     ).fetchall()
 
     db.close()
@@ -2825,57 +3210,69 @@ async def account_reviews(call: CallbackQuery):
 
     for r in rows:
         stars = "⭐" * int(r["rating"])
+
         text += (
             f"{stars}\n"
             f"{r['review'] or 'No written review'}\n"
             f"📅 {r['created_at'][:10]}\n\n"
         )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="⬅️ Back",
-                        callback_data="acc_home"
+                        text="⬅️ Accounts",
+                        callback_data="acc_home",
                     )
                 ]
             ]
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# BUY
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT BUY
+# ============================================================
 
 @dp.callback_query(F.data.startswith("acc_buy:"))
 async def account_buy(call: CallbackQuery):
 
-    pid = int(call.data.split(":")[1])
+    try:
+        pid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid product.",
+            show_alert=True,
+        )
+
     p = account_product(pid)
 
     if not p:
         await call.answer(
             "Product unavailable.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
     if p["stock"] <= 0:
         await call.answer(
             "Out of stock.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
     if p["seller_id"] == call.from_user.id:
         await call.answer(
             "You cannot buy your own product.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
@@ -2885,40 +3282,52 @@ async def account_buy(call: CallbackQuery):
         f"Product ID: {p['id']}\n"
         f"Price: <b>{p['price']} {CURRENCY}</b>\n"
         f"Stock: {p['stock']}\n\n"
-        "Your balance will be charged and the order will enter escrow."
+        "Your balance will be charged and the order "
+        "will enter escrow."
     )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text="✅ Confirm Buy",
-                        callback_data=f"acc_confirm:{pid}"
+                        callback_data=f"acc_confirm:{pid}",
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         text="❌ Cancel",
-                        callback_data=f"acc_product:{pid}"
+                        callback_data=f"acc_product:{pid}",
                     )
-                ]
+                ],
             ]
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# CONFIRM PURCHASE
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT CONFIRM PURCHASE
+# ============================================================
 
 @dp.callback_query(F.data.startswith("acc_confirm:"))
 async def account_confirm(call: CallbackQuery):
 
-    pid = int(call.data.split(":")[1])
+    try:
+        pid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid product.",
+            show_alert=True,
+        )
+
     uid = call.from_user.id
 
     db = con()
@@ -2928,50 +3337,82 @@ async def account_confirm(call: CallbackQuery):
 
         p = db.execute(
             """
-            SELECT p.*, s.status AS seller_status
+            SELECT
+                p.*,
+                s.status AS seller_status
             FROM account_products p
-            JOIN account_sellers s ON s.id=p.seller_id
-            WHERE p.id=? AND p.active=1
+            JOIN account_sellers s
+                ON s.id=p.seller_id
+            WHERE p.id=?
+              AND p.active=1
             """,
-            (pid,)
+            (pid,),
         ).fetchone()
 
         if not p:
             db.rollback()
+
             await call.answer(
                 "Product unavailable.",
-                show_alert=True
+                show_alert=True,
             )
             return
 
         if p["stock"] <= 0:
             db.rollback()
+
             await call.answer(
                 "Out of stock.",
-                show_alert=True
+                show_alert=True,
             )
             return
 
         if p["seller_status"] != "approved":
             db.rollback()
+
             await call.answer(
                 "Seller is not active.",
-                show_alert=True
+                show_alert=True,
+            )
+            return
+
+        if p["seller_id"] == uid:
+            db.rollback()
+
+            await call.answer(
+                "You cannot buy your own product.",
+                show_alert=True,
             )
             return
 
         price = dec(p["price"])
 
+        if price <= 0:
+            db.rollback()
+
+            await call.answer(
+                "Invalid product price.",
+                show_alert=True,
+            )
+            return
+
+        # FIX:
+        # users table column is 'id', not 'user_id'.
         user = db.execute(
-            "SELECT balance FROM users WHERE user_id=?",
-            (uid,)
+            """
+            SELECT balance
+            FROM users
+            WHERE id=?
+            """,
+            (uid,),
         ).fetchone()
 
         if not user:
             db.rollback()
+
             await call.answer(
                 "User account not found.",
-                show_alert=True
+                show_alert=True,
             )
             return
 
@@ -2979,36 +3420,48 @@ async def account_confirm(call: CallbackQuery):
 
         if balance < price:
             db.rollback()
+
             await call.answer(
                 "Insufficient balance.",
-                show_alert=True
+                show_alert=True,
             )
             return
 
+        new_balance = balance - price
+
+        # FIX:
+        # WHERE id=?, not WHERE user_id=?
         db.execute(
             """
             UPDATE users
             SET balance=?
-            WHERE user_id=?
+            WHERE id=?
             """,
-            (str(balance - price), uid)
+            (
+                str(new_balance),
+                uid,
+            ),
         )
 
         new_stock = p["stock"] - 1
 
+        # Keep product active even when stock becomes 0.
         db.execute(
             """
             UPDATE account_products
-            SET stock=?, active=CASE WHEN ? <= 0 THEN 0 ELSE active END
+            SET stock=?
             WHERE id=?
+            AND stock>0
             """,
-            (new_stock, new_stock, pid)
+            (
+                new_stock,
+                pid,
+            ),
         )
 
-        db.execute(
+        cur = db.execute(
             """
-            INSERT INTO account_orders
-            (
+            INSERT INTO account_orders(
                 buyer_id,
                 product_id,
                 seller_id,
@@ -3017,7 +3470,9 @@ async def account_confirm(call: CallbackQuery):
                 status,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, 'escrow_pending', ?)
+            VALUES(
+                ?, ?, ?, ?, ?, 'escrow_pending', ?
+            )
             """,
             (
                 uid,
@@ -3025,59 +3480,81 @@ async def account_confirm(call: CallbackQuery):
                 p["seller_id"],
                 1,
                 str(price),
-                now()
-            )
+                now(),
+            ),
         )
 
-        order_id = db.execute(
-            "SELECT last_insert_rowid()"
-        ).fetchone()[0]
+        order_id = cur.lastrowid
 
-        try:
-            db.execute(
-                """
-                INSERT INTO transactions
-                (user_id, amount, kind, created_at)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    uid,
-                    str(-price),
-                    "account_purchase",
-                    now()
-                )
+        # FIX:
+        # transactions table requires status + note.
+        db.execute(
+            """
+            INSERT INTO transactions(
+                user_id,
+                kind,
+                amount,
+                status,
+                note,
+                created_at
             )
-        except Exception:
-            pass
+            VALUES(?,?,?,?,?,?)
+            """,
+            (
+                uid,
+                "account_purchase",
+                str(-price),
+                "completed",
+                f"Account Order #{order_id}",
+                now(),
+            ),
+        )
 
         db.commit()
 
     except Exception:
         db.rollback()
+
         await call.answer(
             "Purchase failed.",
-            show_alert=True
+            show_alert=True,
         )
-        db.close()
+
         return
 
-    db.close()
+    finally:
+        db.close()
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         "✅ <b>Order Created</b>\n\n"
         f"🧾 Order ID: <code>{order_id}</code>\n"
         f"📦 Product ID: <code>{pid}</code>\n\n"
         "💰 Payment is held in escrow.\n"
         "📨 Seller must provide the delivery.\n"
-        "✅ After receiving the product, confirm the order."
+        "✅ After receiving the authorized product, "
+        "confirm the order.",
+        reply_markup=K(
+            [
+                [
+                    ("📦 My Account Orders", "acc_orders")
+                ],
+                [
+                    ("🛍️ Accounts Marketplace", "acc_home")
+                ],
+            ]
+        ),
+        parse_mode="HTML",
     )
 
-    await call.answer("Order created.")
+    await call.answer(
+        "Order created."
+    )
 
 
-# ------------------------------------------------------------
-# MY ORDERS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT ORDERS
+# ============================================================
 
 @dp.callback_query(F.data == "acc_orders")
 async def account_orders(call: CallbackQuery):
@@ -3093,12 +3570,13 @@ async def account_orders(call: CallbackQuery):
             o.created_at,
             p.title
         FROM account_orders o
-        JOIN account_products p ON p.id=o.product_id
+        LEFT JOIN account_products p
+            ON p.id=o.product_id
         WHERE o.buyer_id=?
         ORDER BY o.id DESC
         LIMIT 20
         """,
-        (call.from_user.id,)
+        (call.from_user.id,),
     ).fetchall()
 
     db.close()
@@ -3111,161 +3589,262 @@ async def account_orders(call: CallbackQuery):
     buttons = []
 
     for r in rows:
+        title = (
+            r["title"]
+            if r["title"]
+            else "Product unavailable"
+        )
+
         text += (
-            f"#{r['id']} • {r['title'][:25]}\n"
-            f"💰 {r['amount']} {CURRENCY} • {r['status']}\n\n"
+            f"#{r['id']} • {title[:25]}\n"
+            f"💰 {r['amount']} {CURRENCY} • "
+            f"{r['status']}\n\n"
         )
 
         if r["status"] == "delivered":
-            buttons.append([
-                InlineKeyboardButton(
-                    text=f"✅ Confirm #{r['id']}",
-                    callback_data=f"acc_order_confirm:{r['id']}"
-                )
-            ])
+            buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"✅ Confirm #{r['id']}",
+                        callback_data=(
+                            f"acc_order_confirm:{r['id']}"
+                        ),
+                    )
+                ]
+            )
 
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
-        )
-    ])
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Accounts",
+                callback_data="acc_home",
+            )
+        ]
+    )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# CONFIRM ORDER
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT CONFIRM DELIVERY
+# ============================================================
 
-@dp.callback_query(F.data.startswith("acc_order_confirm:"))
+@dp.callback_query(
+    F.data.startswith("acc_order_confirm:")
+)
 async def account_order_confirm(call: CallbackQuery):
 
-    oid = int(call.data.split(":")[1])
+    try:
+        oid = int(
+            call.data.split(":", 1)[1]
+        )
+    except (ValueError, IndexError):
+        return await call.answer(
+            "Invalid order.",
+            show_alert=True,
+        )
+
     uid = call.from_user.id
 
     db = con()
 
-    order = db.execute(
-        """
-        SELECT *
-        FROM account_orders
-        WHERE id=? AND buyer_id=?
-        """,
-        (oid, uid)
-    ).fetchone()
+    try:
+        db.execute("BEGIN IMMEDIATE")
 
-    if not order:
-        db.close()
-        await call.answer(
-            "Order not found.",
-            show_alert=True
+        order = db.execute(
+            """
+            SELECT *
+            FROM account_orders
+            WHERE id=?
+            AND buyer_id=?
+            """,
+            (
+                oid,
+                uid,
+            ),
+        ).fetchone()
+
+        if not order:
+            db.rollback()
+
+            await call.answer(
+                "Order not found.",
+                show_alert=True,
+            )
+            return
+
+        if order["status"] != "delivered":
+            db.rollback()
+
+            await call.answer(
+                "Order is not ready for confirmation.",
+                show_alert=True,
+            )
+            return
+
+        amount = dec(order["amount"])
+
+        commission = (
+            amount * Decimal("0.10")
+        ).quantize(Decimal("0.01"))
+
+        seller_amount = amount - commission
+
+        seller = db.execute(
+            """
+            SELECT user_id
+            FROM account_sellers
+            WHERE id=?
+            """,
+            (order["seller_id"],),
+        ).fetchone()
+
+        if not seller:
+            db.rollback()
+
+            await call.answer(
+                "Seller unavailable.",
+                show_alert=True,
+            )
+            return
+
+        # FIX:
+        # users column is id.
+        seller_user = db.execute(
+            """
+            SELECT balance
+            FROM users
+            WHERE id=?
+            """,
+            (seller["user_id"],),
+        ).fetchone()
+
+        if not seller_user:
+            db.rollback()
+
+            await call.answer(
+                "Seller wallet unavailable.",
+                show_alert=True,
+            )
+            return
+
+        new_balance = (
+            dec(seller_user["balance"])
+            + seller_amount
         )
+
+        # FIX:
+        # WHERE id=?
+        db.execute(
+            """
+            UPDATE users
+            SET balance=?
+            WHERE id=?
+            """,
+            (
+                str(new_balance),
+                seller["user_id"],
+            ),
+        )
+
+        db.execute(
+            """
+            UPDATE account_orders
+            SET
+                status='completed',
+                buyer_confirmed=1,
+                seller_paid=1,
+                confirmed_at=?
+            WHERE id=?
+            AND status='delivered'
+            """,
+            (
+                now(),
+                oid,
+            ),
+        )
+
+        db.execute(
+            """
+            UPDATE account_sellers
+            SET total_sales=total_sales+1
+            WHERE id=?
+            """,
+            (
+                order["seller_id"],
+            ),
+        )
+
+        db.execute(
+            """
+            INSERT INTO transactions(
+                user_id,
+                kind,
+                amount,
+                status,
+                note,
+                created_at
+            )
+            VALUES(?,?,?,?,?,?)
+            """,
+            (
+                seller["user_id"],
+                "account_seller_payout",
+                str(seller_amount),
+                "completed",
+                f"Account Order #{oid} payout",
+                now(),
+            ),
+        )
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+
+        await call.answer(
+            "Order confirmation failed.",
+            show_alert=True,
+        )
+
         return
 
-    if order["status"] != "delivered":
+    finally:
         db.close()
-        await call.answer(
-            "Order is not ready for confirmation.",
-            show_alert=True
-        )
-        return
 
-    # Marketplace commission
-    amount = dec(order["amount"])
-    commission = amount * Decimal("0.10")
-    seller_amount = amount - commission
-
-    seller = db.execute(
-        """
-        SELECT user_id
-        FROM account_sellers
-        WHERE id=?
-        """,
-        (order["seller_id"],)
-    ).fetchone()
-
-    if not seller:
-        db.close()
-        await call.answer(
-            "Seller unavailable.",
-            show_alert=True
-        )
-        return
-
-    seller_user = db.execute(
-        """
-        SELECT balance
-        FROM users
-        WHERE user_id=?
-        """,
-        (seller["user_id"],)
-    ).fetchone()
-
-    if not seller_user:
-        db.close()
-        await call.answer(
-            "Seller wallet unavailable.",
-            show_alert=True
-        )
-        return
-
-    new_balance = dec(seller_user["balance"]) + seller_amount
-
-    db.execute(
-        """
-        UPDATE users
-        SET balance=?
-        WHERE user_id=?
-        """,
-        (str(new_balance), seller["user_id"])
-    )
-
-    db.execute(
-        """
-        UPDATE account_orders
-        SET
-            status='completed',
-            buyer_confirmed=1,
-            seller_paid=1,
-            confirmed_at=?
-        WHERE id=?
-        """,
-        (now(), oid)
-    )
-
-    db.execute(
-        """
-        UPDATE account_sellers
-        SET total_sales=total_sales+1
-        WHERE id=?
-        """,
-        (order["seller_id"],)
-    )
-
-    db.commit()
-    db.close()
-
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         "✅ <b>Order Completed</b>\n\n"
         f"Order ID: <code>{oid}</code>\n"
-        "💰 Seller payment released.\n"
-        "⭐ You can now leave a review using /rate."
+        "💰 Seller payment released.\n\n"
+        "You can submit a review after completing the order.",
+        reply_markup=K(
+            [
+                [
+                    ("🛍️ Accounts", "acc_home")
+                ]
+            ]
+        ),
+        parse_mode="HTML",
     )
 
-    await call.answer("Order confirmed.")
+    await call.answer(
+        "Order confirmed."
+    )
 
 
-# ------------------------------------------------------------
-# POPULAR
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT POPULAR
+# ============================================================
 
 @dp.callback_query(F.data == "acc_popular")
 async def account_popular(call: CallbackQuery):
@@ -3280,7 +3859,8 @@ async def account_popular(call: CallbackQuery):
             p.price,
             p.stock
         FROM account_products p
-        JOIN account_sellers s ON s.id=p.seller_id
+        JOIN account_sellers s
+            ON s.id=p.seller_id
         WHERE p.active=1
           AND p.stock>0
           AND s.status='approved'
@@ -3295,33 +3875,41 @@ async def account_popular(call: CallbackQuery):
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🔥 #{r['id']} • {r['title'][:25]} • {r['price']} {CURRENCY}",
-                callback_data=f"acc_product:{r['id']}"
+                text=(
+                    f"🔥 #{r['id']} • "
+                    f"{r['title'][:25]} • "
+                    f"{r['price']} {CURRENCY}"
+                ),
+                callback_data=f"acc_product:{r['id']}",
             )
         ]
         for r in rows
     ]
 
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
-        )
-    ])
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Accounts",
+                callback_data="acc_home",
+            )
+        ]
+    )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         "🔥 <b>Popular Accounts Products</b>",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# NEW PRODUCTS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT NEW
+# ============================================================
 
 @dp.callback_query(F.data == "acc_new")
 async def account_new(call: CallbackQuery):
@@ -3330,9 +3918,13 @@ async def account_new(call: CallbackQuery):
 
     rows = db.execute(
         """
-        SELECT p.id, p.title, p.price
+        SELECT
+            p.id,
+            p.title,
+            p.price
         FROM account_products p
-        JOIN account_sellers s ON s.id=p.seller_id
+        JOIN account_sellers s
+            ON s.id=p.seller_id
         WHERE p.active=1
           AND p.stock>0
           AND s.status='approved'
@@ -3346,33 +3938,41 @@ async def account_new(call: CallbackQuery):
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🆕 #{r['id']} • {r['title'][:25]} • {r['price']} {CURRENCY}",
-                callback_data=f"acc_product:{r['id']}"
+                text=(
+                    f"🆕 #{r['id']} • "
+                    f"{r['title'][:25]} • "
+                    f"{r['price']} {CURRENCY}"
+                ),
+                callback_data=f"acc_product:{r['id']}",
             )
         ]
         for r in rows
     ]
 
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
-        )
-    ])
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Accounts",
+                callback_data="acc_home",
+            )
+        ]
+    )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         "🆕 <b>New Products</b>",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# TOP SELLERS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT TOP SELLERS
+# ============================================================
 
 @dp.callback_query(F.data == "acc_top_sellers")
 async def account_top_sellers(call: CallbackQuery):
@@ -3395,64 +3995,114 @@ async def account_top_sellers(call: CallbackQuery):
     buttons = []
 
     for r in rows:
-        badge = "✅" if r["verified"] else "⭐"
-
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"{badge} {r['nickname']} • {r['rating']:.1f}",
-                callback_data=f"acc_seller_profile:{r['id']}"
-            )
-        ])
-
-    buttons.append([
-        InlineKeyboardButton(
-            text="⬅️ Accounts",
-            callback_data="acc_home"
+        badge = (
+            "✅"
+            if r["verified"]
+            else "⭐"
         )
-    ])
 
-    await call.message.edit_text(
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=(
+                        f"{badge} "
+                        f"{r['nickname']} • "
+                        f"{r['rating']:.1f}"
+                    ),
+                    callback_data=(
+                        f"acc_seller_profile:{r['id']}"
+                    ),
+                )
+            ]
+        )
+
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Accounts",
+                callback_data="acc_home",
+            )
+        ]
+    )
+
+    await safe_edit(
+        call.message,
         "⭐ <b>Top Sellers</b>",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# SEARCH
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT SEARCH
+# ============================================================
+
+# Search is now enabled only for users who pressed Search.
+ACCOUNT_SEARCH_USERS = set()
+
 
 @dp.callback_query(F.data == "acc_search")
 async def account_search_start(call: CallbackQuery):
+
+    ACCOUNT_SEARCH_USERS.add(
+        call.from_user.id
+    )
 
     await call.message.answer(
         "🔎 <b>Accounts Search</b>\n\n"
         "Send one of these:\n"
         "• Product ID\n"
-        "• Seller ID\n"
+        "• Seller ID / Seller Code\n"
         "• Seller nickname\n"
         "• Category\n"
         "• Keyword\n\n"
-        "Example: <code>gmail</code>"
+        "Example: <code>gmail</code>\n\n"
+        "Send /cancel_search to cancel.",
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
+@dp.message(Command("cancel_search"))
+async def cancel_account_search(message: Message):
+
+    ACCOUNT_SEARCH_USERS.discard(
+        message.from_user.id
+    )
+
+    await message.answer(
+        "❌ Accounts search cancelled."
+    )
+
+
 @dp.message()
 async def account_search_message(message: Message):
 
-    query = message.text.strip() if message.text else ""
+    uid = message.from_user.id
+
+    # Do not process ordinary messages.
+    if uid not in ACCOUNT_SEARCH_USERS:
+        return
+
+    query = (
+        message.text.strip()
+        if message.text
+        else ""
+    )
 
     if not query:
         return
 
-    # Ignore commands
     if query.startswith("/"):
         return
+
+    # Search request consumed.
+    ACCOUNT_SEARCH_USERS.discard(uid)
 
     db = con()
 
@@ -3491,25 +4141,45 @@ async def account_search_message(message: Message):
             f"%{query.lower()}%",
             f"%{query.lower()}%",
             f"%{query.lower()}%",
-            f"%{query.lower()}%"
-        )
+            f"%{query.lower()}%",
+        ),
     ).fetchall()
 
     db.close()
 
-    # Don't hijack ordinary bot messages
     if not rows:
-        return
+        return await message.answer(
+            f"🔎 No Accounts products found for:\n"
+            f"<code>{query}</code>",
+            parse_mode="HTML",
+        )
 
     buttons = []
 
     for r in rows:
-        buttons.append([
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=(
+                        f"#{r['id']} • "
+                        f"{r['title'][:25]} • "
+                        f"{r['price']} {CURRENCY}"
+                    ),
+                    callback_data=(
+                        f"acc_product:{r['id']}"
+                    ),
+                )
+            ]
+        )
+
+    buttons.append(
+        [
             InlineKeyboardButton(
-                text=f"#{r['id']} • {r['title'][:25]} • {r['price']} {CURRENCY}",
-                callback_data=f"acc_product:{r['id']}"
+                text="⬅️ Accounts",
+                callback_data="acc_home",
             )
-        ])
+        ]
+    )
 
     await message.answer(
         f"🔎 <b>Search Results</b>\n"
@@ -3517,22 +4187,26 @@ async def account_search_message(message: Message):
         f"Found: {len(rows)}",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
 
 # ============================================================
-# SELLER CENTER
+# ACCOUNT SELLER CENTER
 # ============================================================
 
 @dp.callback_query(F.data == "acc_seller")
 async def account_seller_center(call: CallbackQuery):
 
-    seller = account_seller_get(call.from_user.id)
+    seller = account_seller_get(
+        call.from_user.id
+    )
 
     if not seller:
 
-        await call.message.edit_text(
+        await safe_edit(
+            call.message,
             "👤 <b>Accounts Seller Center</b>\n\n"
             "You are not an Accounts seller yet.",
             reply_markup=InlineKeyboardMarkup(
@@ -3540,17 +4214,18 @@ async def account_seller_center(call: CallbackQuery):
                     [
                         InlineKeyboardButton(
                             text="📝 Apply as Seller",
-                            callback_data="acc_seller_apply"
+                            callback_data="acc_seller_apply",
                         )
                     ],
                     [
                         InlineKeyboardButton(
                             text="⬅️ Accounts",
-                            callback_data="acc_home"
+                            callback_data="acc_home",
                         )
-                    ]
+                    ],
                 ]
-            )
+            ),
+            parse_mode="HTML",
         )
 
         await call.answer()
@@ -3571,62 +4246,72 @@ async def account_seller_center(call: CallbackQuery):
         [
             InlineKeyboardButton(
                 text="➕ Add Product",
-                callback_data="acc_add_product"
+                callback_data="acc_add_product",
             ),
             InlineKeyboardButton(
                 text="📦 My Products",
-                callback_data="acc_my_products"
-            )
+                callback_data="acc_my_products",
+            ),
         ],
         [
             InlineKeyboardButton(
                 text="⭐ My Reviews",
-                callback_data="acc_my_reviews"
+                callback_data="acc_my_reviews",
             )
         ],
         [
             InlineKeyboardButton(
                 text="⬅️ Accounts",
-                callback_data="acc_home"
+                callback_data="acc_home",
             )
-        ]
+        ],
     ]
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=buttons
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# SELLER APPLY
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT SELLER APPLY
+# ============================================================
 
 @dp.callback_query(F.data == "acc_seller_apply")
 async def account_seller_apply(call: CallbackQuery):
 
-    existing = account_seller_get(call.from_user.id)
+    existing = account_seller_get(
+        call.from_user.id
+    )
 
     if existing:
         await call.answer(
             "Application already exists.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
-    nickname = f"Seller{call.from_user.id % 100000:05d}"
-    seller_code = f"ACC-{call.from_user.id % 1000000:06d}"
+    nickname = (
+        f"Seller"
+        f"{call.from_user.id % 100000:05d}"
+    )
+
+    seller_code = (
+        f"ACC-"
+        f"{call.from_user.id % 1000000:06d}"
+    )
 
     db = con()
 
     db.execute(
         """
-        INSERT INTO account_sellers
-        (
+        INSERT INTO account_sellers(
             user_id,
             seller_code,
             nickname,
@@ -3639,36 +4324,40 @@ async def account_seller_apply(call: CallbackQuery):
             call.from_user.id,
             seller_code,
             nickname,
-            now()
-        )
+            now(),
+        ),
     )
 
     db.commit()
     db.close()
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         "✅ <b>Seller Application Submitted</b>\n\n"
         f"Nickname: <b>{nickname}</b>\n"
         f"Seller ID: <code>{seller_code}</code>\n\n"
-        "⏳ Admin approval is required."
+        "⏳ Admin approval is required.",
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# MY PRODUCTS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT MY PRODUCTS
+# ============================================================
 
 @dp.callback_query(F.data == "acc_my_products")
 async def account_my_products(call: CallbackQuery):
 
-    seller = account_seller_get(call.from_user.id)
+    seller = account_seller_get(
+        call.from_user.id
+    )
 
     if not seller:
         await call.answer(
             "Seller account not found.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
@@ -3676,15 +4365,45 @@ async def account_my_products(call: CallbackQuery):
 
     rows = db.execute(
         """
-        SELECT id, title, price, stock, active
+        SELECT
+            id,
+            title,
+            price,
+            stock,
+            active
         FROM account_products
         WHERE seller_id=?
         ORDER BY id DESC
         LIMIT 30
         """,
-        (seller["id"],)
+        (seller["id"],),
     ).fetchall()
 
+    # Update listing count automatically.
+    active_count = db.execute(
+        """
+        SELECT COUNT(*) AS c
+        FROM account_products
+        WHERE seller_id=?
+        AND active=1
+        AND stock>0
+        """,
+        (seller["id"],),
+    ).fetchone()["c"]
+
+    db.execute(
+        """
+        UPDATE account_sellers
+        SET active_listings=?
+        WHERE id=?
+        """,
+        (
+            active_count,
+            seller["id"],
+        ),
+    )
+
+    db.commit()
     db.close()
 
     text = "📦 <b>My Products</b>\n\n"
@@ -3693,81 +4412,99 @@ async def account_my_products(call: CallbackQuery):
         text += "No products yet."
 
     for r in rows:
-        status = "🟢" if r["active"] else "🔴"
-
-        text += (
-            f"{status} #{r['id']} {r['title'][:30]}\n"
-            f"💰 {r['price']} {CURRENCY} | Stock: {r['stock']}\n\n"
+        status = (
+            "🟢"
+            if r["active"] and r["stock"] > 0
+            else "🔴"
         )
 
-    await call.message.edit_text(
+        text += (
+            f"{status} #{r['id']} "
+            f"{r['title'][:30]}\n"
+            f"💰 {r['price']} {CURRENCY} | "
+            f"Stock: {r['stock']}\n\n"
+        )
+
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text="➕ Add Product",
-                        callback_data="acc_add_product"
+                        callback_data="acc_add_product",
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         text="⬅️ Seller Center",
-                        callback_data="acc_seller"
+                        callback_data="acc_seller",
                     )
-                ]
+                ],
             ]
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# ADD PRODUCT
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT ADD PRODUCT
+# ============================================================
 
 @dp.callback_query(F.data == "acc_add_product")
 async def account_add_product(call: CallbackQuery):
 
-    seller = account_seller_get(call.from_user.id)
+    seller = account_seller_get(
+        call.from_user.id
+    )
 
     if not seller or seller["status"] != "approved":
         await call.answer(
             "Your seller account must be approved first.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
     await call.message.answer(
-        "➕ <b>Add Account Product</b>\n\n"
+        "➕ <b>Add Authorized Account Product</b>\n\n"
         "Use the following format:\n\n"
-        "<code>\n"
-        "category | title | description | price | quantity | quality | fresh/aged | registration | replacement_days | delivery | metadata | rules\n"
+        "<code>"
+        "category | title | description | price | quantity | "
+        "quality | fresh/aged | registration | replacement_days | "
+        "delivery | metadata | rules"
         "</code>\n\n"
         "Example:\n"
-        "<code>\n"
-        "Gmail | Gmail Premium | Authorized account | 10 | 1 | Premium | Fresh | Manual | 7 | Manual | Region: US | No abuse\n"
+        "<code>"
+        "Gmail | Authorized Gmail Account | "
+        "Legally authorized account | 10 | 1 | Premium | "
+        "Fresh | Manual | 7 | Manual | Region: US | No abuse"
         "</code>\n\n"
-        "⚠️ Do not include passwords, cookies, session tokens or other authentication secrets."
+        "⚠️ Do NOT include passwords, cookies, session tokens, "
+        "authentication secrets or phishing material.",
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
-# ------------------------------------------------------------
-# MY REVIEWS
-# ------------------------------------------------------------
+# ============================================================
+# ACCOUNT MY REVIEWS
+# ============================================================
 
 @dp.callback_query(F.data == "acc_my_reviews")
 async def account_my_reviews(call: CallbackQuery):
 
-    seller = account_seller_get(call.from_user.id)
+    seller = account_seller_get(
+        call.from_user.id
+    )
 
     if not seller:
         await call.answer(
             "Seller not found.",
-            show_alert=True
+            show_alert=True,
         )
         return
 
@@ -3775,13 +4512,16 @@ async def account_my_reviews(call: CallbackQuery):
 
     rows = db.execute(
         """
-        SELECT rating, review, created_at
+        SELECT
+            rating,
+            review,
+            created_at
         FROM account_reviews
         WHERE seller_id=?
         ORDER BY id DESC
         LIMIT 20
         """,
-        (seller["id"],)
+        (seller["id"],),
     ).fetchall()
 
     db.close()
@@ -3798,25 +4538,27 @@ async def account_my_reviews(call: CallbackQuery):
             f"{r['created_at'][:10]}\n\n"
         )
 
-    await call.message.edit_text(
+    await safe_edit(
+        call.message,
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text="⬅️ Seller Center",
-                        callback_data="acc_seller"
+                        callback_data="acc_seller",
                     )
                 ]
             ]
-        )
+        ),
+        parse_mode="HTML",
     )
 
     await call.answer()
 
 
 # ============================================================
-# ADMIN ACCOUNTS PANEL
+# ACCOUNT ADMIN PANEL
 # ============================================================
 
 @dp.message(Command("accounts_admin"))
@@ -3828,7 +4570,10 @@ async def accounts_admin(message: Message):
     db = con()
 
     sellers = db.execute(
-        "SELECT COUNT(*) AS c FROM account_sellers"
+        """
+        SELECT COUNT(*) AS c
+        FROM account_sellers
+        """
     ).fetchone()["c"]
 
     pending = db.execute(
@@ -3840,11 +4585,17 @@ async def accounts_admin(message: Message):
     ).fetchone()["c"]
 
     products = db.execute(
-        "SELECT COUNT(*) AS c FROM account_products"
+        """
+        SELECT COUNT(*) AS c
+        FROM account_products
+        """
     ).fetchone()["c"]
 
-    orders = db.execute(
-        "SELECT COUNT(*) AS c FROM account_orders"
+    orders_count = db.execute(
+        """
+        SELECT COUNT(*) AS c
+        FROM account_orders
+        """
     ).fetchone()["c"]
 
     replacements = db.execute(
@@ -3862,12 +4613,17 @@ async def accounts_admin(message: Message):
         f"👤 Sellers: {sellers}\n"
         f"⏳ Pending sellers: {pending}\n"
         f"📦 Products: {products}\n"
-        f"🧾 Orders: {orders}\n"
+        f"🧾 Orders: {orders_count}\n"
         f"🔄 Pending replacements: {replacements}\n\n"
         "Use:\n"
-        "<code>/accounts_approve_seller SELLER_ID</code>"
+        "<code>/accounts_approve_seller SELLER_ID</code>",
+        parse_mode="HTML",
     )
 
+
+# ============================================================
+# ACCOUNT ADMIN APPROVE SELLER
+# ============================================================
 
 @dp.message(Command("accounts_approve_seller"))
 async def accounts_approve_seller(message: Message):
@@ -3875,19 +4631,22 @@ async def accounts_approve_seller(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
 
-    parts = message.text.split()
+    parts = (message.text or "").split()
 
     if len(parts) != 2:
         await message.answer(
             "Usage:\n"
-            "<code>/accounts_approve_seller SELLER_ID</code>"
+            "<code>/accounts_approve_seller SELLER_ID</code>",
+            parse_mode="HTML",
         )
         return
 
     try:
         seller_id = int(parts[1])
     except ValueError:
-        await message.answer("Invalid Seller ID.")
+        await message.answer(
+            "Invalid Seller ID."
+        )
         return
 
     db = con()
@@ -3898,28 +4657,31 @@ async def accounts_approve_seller(message: Message):
         FROM account_sellers
         WHERE id=?
         """,
-        (seller_id,)
+        (seller_id,),
     ).fetchone()
 
     if not seller:
         db.close()
-        await message.answer("Seller not found.")
+
+        await message.answer(
+            "Seller not found."
+        )
         return
 
     db.execute(
         """
         UPDATE account_sellers
-        SET status='approved',
+        SET
+            status='approved',
             verified=1
         WHERE id=?
         """,
-        (seller_id,)
+        (seller_id,),
     )
 
     db.execute(
         """
-        INSERT INTO account_audit_logs
-        (
+        INSERT INTO account_audit_logs(
             admin_id,
             action,
             target_type,
@@ -3935,36 +4697,49 @@ async def accounts_approve_seller(message: Message):
             "seller",
             seller_id,
             "Accounts seller approved",
-            now()
-        )
+            now(),
+        ),
     )
 
     db.commit()
     db.close()
 
     await message.answer(
-        f"✅ Seller <code>{seller_id}</code> approved."
+        f"✅ Seller <code>{seller_id}</code> approved.",
+        parse_mode="HTML",
     )
 
+    try:
+        await bot.send_message(
+            chat_id=seller["user_id"],
+            text=(
+                "✅ Your Accounts Seller application "
+                "has been approved!\n\n"
+                "You can now use the Accounts Seller Center."
+            ),
+        )
+    except Exception:
+        pass
+
 
 # ============================================================
-# ACCOUNT DB INITIALIZATION
+# STARTUP
 # ============================================================
 
-# IMPORTANT:
-# In async def main(), immediately after:
-#
-#     init()
-#
-# add:
-#
-#     account_db()
-#
-# ============================================================
 async def main():
+
+    # Main DB
     init()
 
+    # Main marketplace categories
+    seed_categories()
+
+    # Accounts DB
+    account_db()
+
     print("Bot is starting...")
+    print("Database initialized.")
+    print("Accounts Marketplace initialized.")
 
     await dp.start_polling(
         bot,
@@ -3972,8 +4747,13 @@ async def main():
     )
 
 
+# ============================================================
+# RUN
+# ============================================================
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+
     except (KeyboardInterrupt, SystemExit):
         print("Bot stopped.")
